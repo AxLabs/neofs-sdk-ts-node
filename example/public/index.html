@@ -1,0 +1,1590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NeoFS SDK Web UI</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --bg-hover: #475569;
+      --text-primary: #f1f5f9;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --success: #10b981;
+      --error: #ef4444;
+      --warning: #f59e0b;
+      --border: #334155;
+      --shadow: rgba(0, 0, 0, 0.3);
+      --container-selected: rgba(59, 130, 246, 0.15);
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 32px;
+      margin-bottom: 32px;
+      box-shadow: 0 8px 16px var(--shadow);
+      border: 1px solid var(--border);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .status-bar {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+
+    .status-item {
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border: 1px solid var(--border);
+    }
+
+    .status-item::before {
+      content: '';
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-connected {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    .status-connected::before {
+      background: var(--success);
+      box-shadow: 0 0 8px var(--success);
+    }
+
+    .status-disconnected {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+      border-color: var(--error);
+    }
+
+    .status-disconnected::before {
+      background: var(--error);
+      box-shadow: 0 0 8px var(--error);
+    }
+
+    .status-key {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .status-key::before {
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    .status-no-key {
+      background: rgba(148, 163, 184, 0.1);
+      color: var(--text-muted);
+      border-color: var(--text-muted);
+    }
+
+    .status-no-key::before {
+      background: var(--text-muted);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 24px;
+      margin-bottom: 24px;
+    }
+
+    .card {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 28px;
+      box-shadow: 0 8px 16px var(--shadow);
+      border: 1px solid var(--border);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 24px var(--shadow);
+    }
+
+    .card.full-width {
+      grid-column: 1 / -1;
+    }
+
+    .card h2 {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 14px;
+    }
+
+    input, textarea, select {
+      width: 100%;
+      padding: 12px 16px;
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+
+    input:focus, textarea:focus, select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    input::placeholder, textarea::placeholder {
+      color: var(--text-muted);
+    }
+
+    button {
+      background: var(--accent);
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-right: 10px;
+      margin-bottom: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    button:hover:not(:disabled) {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    button:active:not(:disabled) {
+      transform: translateY(0);
+    }
+
+    button:disabled {
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    button.secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    button.secondary:hover:not(:disabled) {
+      background: var(--bg-hover);
+      border-color: var(--accent);
+    }
+
+    button.danger {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error);
+      border: 1px solid var(--error);
+    }
+
+    button.danger:hover:not(:disabled) {
+      background: var(--error);
+      color: white;
+    }
+
+    button.small {
+      padding: 8px 16px;
+      font-size: 12px;
+    }
+
+    .info-box {
+      background: var(--bg-tertiary);
+      border-radius: 8px;
+      padding: 16px;
+      margin-top: 16px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .info-box strong {
+      color: var(--text-primary);
+      display: block;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+
+    .info-box div {
+      margin-top: 8px;
+    }
+
+    /* Toast notifications - fixed position, don't affect layout */
+    #messages {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 10000;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-width: 400px;
+      pointer-events: none;
+    }
+
+    .toast {
+      padding: 14px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      border: 1px solid;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+      pointer-events: auto;
+      animation: toastSlideIn 0.3s ease-out;
+      cursor: pointer;
+      transition: opacity 0.2s ease-out;
+    }
+
+    .toast:hover {
+      opacity: 0.9;
+    }
+
+    @keyframes toastSlideIn {
+      from {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+      to {
+        opacity: 1;
+        transform: translateX(0);
+      }
+    }
+
+    @keyframes toastSlideOut {
+      from {
+        opacity: 1;
+        transform: translateX(0);
+      }
+      to {
+        opacity: 0;
+        transform: translateX(100%);
+      }
+    }
+
+    .toast.success {
+      background: var(--bg-secondary);
+      color: var(--success);
+      border-color: var(--success);
+    }
+
+    .toast.error {
+      background: var(--bg-secondary);
+      color: var(--error);
+      border-color: var(--error);
+    }
+
+    .toast.info {
+      background: var(--bg-secondary);
+      color: var(--accent);
+      border-color: var(--accent);
+    }
+
+    .toast::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      flex-shrink: 0;
+      border-radius: 50%;
+    }
+
+    .toast.success::before { background: var(--success); }
+    .toast.error::before { background: var(--error); }
+    .toast.info::before { background: var(--accent); }
+
+    .loading {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-top: 2px solid currentColor;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .button-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      color: var(--text-muted);
+    }
+
+    .empty-state::before {
+      content: '📭';
+      font-size: 48px;
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    /* Storage Browser Styles */
+    .storage-browser {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      min-height: 500px;
+    }
+
+    @media (max-width: 900px) {
+      .storage-browser {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .browser-panel {
+      background: var(--bg-tertiary);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .browser-header {
+      padding: 16px 20px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .browser-header h3 {
+      font-size: 16px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .browser-toolbar {
+      padding: 12px 16px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .browser-list {
+      flex: 1;
+      overflow-y: auto;
+      max-height: 400px;
+    }
+
+    .browser-list::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .browser-list::-webkit-scrollbar-track {
+      background: var(--bg-secondary);
+    }
+
+    .browser-list::-webkit-scrollbar-thumb {
+      background: var(--bg-hover);
+      border-radius: 8px;
+    }
+
+    .browser-item {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .browser-item:last-child {
+      border-bottom: none;
+    }
+
+    .container-item {
+      background: var(--bg-secondary);
+    }
+
+    .container-header {
+      padding: 14px 20px;
+      cursor: pointer;
+      transition: background 0.2s;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      user-select: none;
+    }
+
+    .container-header:hover {
+      background: var(--bg-hover);
+    }
+
+    .container-header.expanded {
+      background: var(--container-selected);
+      border-left: 3px solid var(--accent);
+    }
+
+    .container-header-info {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .expand-icon {
+      width: 20px;
+      height: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.2s;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .container-header.expanded .expand-icon {
+      transform: rotate(90deg);
+    }
+
+    .container-content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      background: var(--bg-primary);
+    }
+
+    .container-content.expanded {
+      max-height: 2000px;
+    }
+
+    .container-objects {
+      padding: 16px 20px;
+    }
+
+    .container-objects-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .container-objects-count {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .object-item {
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      transition: background 0.2s;
+    }
+
+    .object-item:last-child {
+      border-bottom: none;
+    }
+
+    .object-item:hover {
+      background: var(--bg-hover);
+    }
+
+    .browser-item-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .browser-item-name {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .browser-item-id {
+      font-family: 'Courier New', monospace;
+      font-size: 11px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .browser-item-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .browser-item-actions {
+      display: flex;
+      gap: 8px;
+      margin-left: 12px;
+      flex-shrink: 0;
+    }
+
+    .selected-indicator {
+      display: inline-block;
+      background: var(--accent);
+      color: white;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+
+    .object-upload {
+      padding: 16px 20px;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+    }
+
+    .object-upload-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-end;
+    }
+
+    .object-upload-row .form-group {
+      margin-bottom: 0;
+      flex: 1;
+    }
+
+    .object-upload-row input {
+      padding: 10px 14px;
+    }
+
+    .object-upload-row textarea {
+      padding: 10px 14px;
+      resize: none;
+    }
+
+    .container-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent);
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .container-badge.none {
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+    }
+
+    .object-count {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-right: auto;
+    }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 12px 16px;
+      border-top: 1px solid var(--border);
+      background: var(--bg-secondary);
+    }
+
+    .pagination span {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .pagination button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Modal styles */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .modal {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      width: 90%;
+      max-width: 700px;
+      max-height: 80vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 16px;
+    }
+
+    .modal-close {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px 8px;
+      border-radius: 4px;
+    }
+
+    .modal-close:hover {
+      background: var(--bg-tertiary);
+      color: var(--text);
+    }
+
+    .modal-body {
+      padding: 20px;
+      overflow-y: auto;
+      flex: 1;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      padding: 16px 20px;
+      border-top: 1px solid var(--border);
+    }
+
+    .object-info {
+      background: var(--bg-tertiary);
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      font-size: 13px;
+    }
+
+    .object-info div {
+      margin-bottom: 8px;
+    }
+
+    .object-info div:last-child {
+      margin-bottom: 0;
+    }
+
+    .object-info code {
+      background: var(--bg-primary);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 11px;
+      word-break: break-all;
+    }
+
+    .object-content label {
+      display: block;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+
+    .object-content pre {
+      background: var(--bg-tertiary);
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      margin: 0;
+      font-size: 13px;
+      max-height: 300px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>🚀 NeoFS SDK Web UI</h1>
+      <div class="status-bar" id="statusBar">
+        <span class="status-item status-disconnected" id="connectionStatus">Disconnected</span>
+        <span class="status-item status-no-key" id="keyStatus">No Key</span>
+        <span class="status-item" id="endpointStatus" style="background: var(--bg-tertiary); border: 1px solid var(--border);">Endpoint: grpc://st1.t5.fs.neo.org:8080</span>
+      </div>
+    </header>
+
+    <div id="messages"></div>
+
+    <div class="grid">
+      <!-- Key Management -->
+      <div class="card">
+        <h2>🔑 Key Management</h2>
+        <div class="form-group">
+          <label>WIF Private Key</label>
+          <input type="password" id="wifInput" placeholder="Enter WIF private key">
+        </div>
+        <div class="button-group">
+          <button onclick="loadKey()">Load Key</button>
+          <button class="secondary" onclick="generateKey()">Generate New Key</button>
+        </div>
+        <div class="info-box" id="keyInfo" style="display: none;">
+          <strong>Key Information</strong>
+          <div><strong>Public Key:</strong> <span id="publicKey" style="font-family: monospace; font-size: 11px;"></span></div>
+          <div style="margin-top: 12px;"><strong>Owner ID:</strong> <span id="ownerId" style="font-family: monospace; font-size: 11px;"></span></div>
+        </div>
+      </div>
+
+      <!-- Connection -->
+      <div class="card">
+        <h2>🔌 Connection</h2>
+        <div class="form-group">
+          <label>Endpoint</label>
+          <input type="text" id="endpointInput" placeholder="grpc://st1.t5.fs.neo.org:8080">
+        </div>
+        <div class="button-group">
+          <button onclick="updateEndpoint()">Update Endpoint</button>
+          <button onclick="connect()" id="connectBtn">Connect</button>
+          <button class="secondary" onclick="disconnect()" id="disconnectBtn" disabled>Disconnect</button>
+        </div>
+      </div>
+
+      <!-- Network Operations -->
+      <div class="card">
+        <h2>🌐 Network Operations</h2>
+        <div class="button-group">
+          <button onclick="getNetworkInfo()">Get Network Info</button>
+          <button onclick="getBalance()">Get Balance</button>
+          <button onclick="getNodeInfo()">Get Local Node Info</button>
+        </div>
+        <div class="info-box" id="networkInfo" style="display: none;"></div>
+        <div class="info-box" id="balanceInfo" style="display: none;"></div>
+        <div class="info-box" id="nodeInfo" style="display: none;"></div>
+      </div>
+
+      <!-- Storage Browser - Full Width -->
+      <div class="card full-width">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+          <h2 style="margin: 0;">Storage Browser</h2>
+          <button class="small secondary" onclick="loadContainers()">Refresh</button>
+        </div>
+        
+        <div class="browser-toolbar" style="margin-bottom: 16px;">
+          <input type="text" id="containerNameInput" placeholder="Container name (optional)" style="flex: 1; padding: 8px 12px;">
+          <button class="small" onclick="createContainer()">+ Create Container</button>
+        </div>
+        
+        <div class="browser-list" id="containersList">
+          <div class="empty-state">No containers loaded<br><small>Click Refresh to load containers</small></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let state = {
+      connected: false,
+      hasSigner: false,
+      endpoint: 'grpc://st1.t5.fs.neo.org:8080',
+      // Container expansion and pagination state
+      expandedContainers: new Set(),
+      containerPages: {}, // { containerId: { page: 1, totalPages: 1, totalObjects: 0 } }
+      pageSize: 20,
+    };
+
+    function showMessage(text, type = 'info') {
+      const messagesDiv = document.getElementById('messages');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.textContent = text;
+      
+      // Click to dismiss
+      toast.onclick = () => {
+        toast.style.animation = 'toastSlideOut 0.3s ease-out';
+        setTimeout(() => toast.remove(), 300);
+      };
+      
+      messagesDiv.appendChild(toast);
+      
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => {
+        if (toast.parentNode) {
+          toast.style.animation = 'toastSlideOut 0.3s ease-out';
+          setTimeout(() => toast.remove(), 300);
+        }
+      }, 5000);
+    }
+
+    async function apiCall(endpoint, options = {}) {
+      try {
+        const response = await fetch(`/api${endpoint}`, {
+          headers: {
+            'Content-Type': 'application/json',
+            ...options.headers,
+          },
+          ...options,
+        });
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.error || 'Request failed');
+        }
+        return data;
+      } catch (error) {
+        showMessage(error.message, 'error');
+        throw error;
+      }
+    }
+
+    async function updateState() {
+      try {
+        const data = await apiCall('/state');
+        state = { ...state, ...data };
+        updateUI();
+      } catch (error) {
+        // Error already shown
+      }
+    }
+
+    function updateUI() {
+      // Connection status
+      const connectionStatus = document.getElementById('connectionStatus');
+      if (state.connected) {
+        connectionStatus.textContent = 'Connected';
+        connectionStatus.className = 'status-item status-connected';
+        document.getElementById('connectBtn').disabled = true;
+        document.getElementById('disconnectBtn').disabled = false;
+      } else {
+        connectionStatus.textContent = 'Disconnected';
+        connectionStatus.className = 'status-item status-disconnected';
+        document.getElementById('connectBtn').disabled = false;
+        document.getElementById('disconnectBtn').disabled = true;
+      }
+
+      // Key status
+      const keyStatus = document.getElementById('keyStatus');
+      if (state.hasSigner) {
+        keyStatus.textContent = 'Key Loaded';
+        keyStatus.className = 'status-item status-key';
+        document.getElementById('keyInfo').style.display = 'block';
+        document.getElementById('publicKey').textContent = state.publicKey ? state.publicKey.substring(0, 32) + '...' : '';
+        document.getElementById('ownerId').textContent = state.ownerId ? state.ownerId.substring(0, 32) + '...' : '';
+      } else {
+        keyStatus.textContent = 'No Key';
+        keyStatus.className = 'status-item status-no-key';
+        document.getElementById('keyInfo').style.display = 'none';
+      }
+
+      // Endpoint
+      document.getElementById('endpointStatus').textContent = `Endpoint: ${state.endpoint}`;
+      document.getElementById('endpointInput').value = state.endpoint;
+    }
+
+    async function loadKey() {
+      const wif = document.getElementById('wifInput').value;
+      if (!wif) {
+        showMessage('Please enter a WIF', 'error');
+        return;
+      }
+      const btn = document.querySelector('button[onclick="loadKey()"]');
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="loading"></span> Loading...';
+        }
+        await apiCall('/key/load', {
+          method: 'POST',
+          body: JSON.stringify({ wif }),
+        });
+        showMessage('Key loaded successfully', 'success');
+        document.getElementById('wifInput').value = '';
+        await updateState();
+      } catch (error) {
+        // Error already shown
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Load Key';
+        }
+      }
+    }
+
+    async function generateKey() {
+      const btn = document.querySelector('button[onclick="generateKey()"]');
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="loading"></span> Generating...';
+        }
+        await apiCall('/key/generate', { method: 'POST' });
+        showMessage('New key generated successfully', 'success');
+        await updateState();
+      } catch (error) {
+        // Error already shown
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Generate New Key';
+        }
+      }
+    }
+
+    async function updateEndpoint() {
+      const endpoint = document.getElementById('endpointInput').value;
+      if (!endpoint) {
+        showMessage('Please enter an endpoint', 'error');
+        return;
+      }
+      try {
+        await apiCall('/endpoint', {
+          method: 'POST',
+          body: JSON.stringify({ endpoint }),
+        });
+        showMessage('Endpoint updated', 'success');
+        await updateState();
+      } catch (error) {
+        // Error already shown
+      }
+    }
+
+    async function connect() {
+      try {
+        const btn = document.getElementById('connectBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span class="loading"></span> Connecting...';
+        await apiCall('/connect', { method: 'POST' });
+        showMessage('Connected successfully', 'success');
+        await updateState();
+        // Auto-load containers after connecting
+        await loadContainers();
+      } catch (error) {
+        // Error already shown
+      } finally {
+        const btn = document.getElementById('connectBtn');
+        btn.disabled = false;
+        btn.innerHTML = 'Connect';
+      }
+    }
+
+    async function disconnect() {
+      try {
+        await apiCall('/disconnect', { method: 'POST' });
+        showMessage('Disconnected', 'info');
+        await updateState();
+      } catch (error) {
+        // Error already shown
+      }
+    }
+
+    async function getNetworkInfo() {
+      const btn = document.querySelector('button[onclick="getNetworkInfo()"]');
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="loading"></span> Loading...';
+        }
+        const result = await apiCall('/network/info');
+        const info = document.getElementById('networkInfo');
+        info.innerHTML = `
+          <strong>Network Information</strong>
+          <div>Current Epoch: <strong>${result.data.currentEpoch}</strong></div>
+          <div>Magic Number: <strong>${result.data.magicNumber}</strong></div>
+          <div>Ms Per Block: <strong>${result.data.msPerBlock}</strong></div>
+          <div>Config Parameters: <strong>${result.data.configParameters}</strong></div>
+        `;
+        info.style.display = 'block';
+        showMessage('Network info retrieved', 'success');
+      } catch (error) {
+        // Error already shown
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Get Network Info';
+        }
+      }
+    }
+
+    async function getBalance() {
+      const btn = document.querySelector('button[onclick="getBalance()"]');
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="loading"></span> Loading...';
+        }
+        const result = await apiCall('/network/balance');
+        const balance = document.getElementById('balanceInfo');
+        balance.innerHTML = `
+          <strong>Account Balance</strong>
+          <div>Value: <strong>${result.data.value}</strong></div>
+          <div>Precision: <strong>${result.data.precision}</strong></div>
+        `;
+        balance.style.display = 'block';
+        showMessage('Balance retrieved', 'success');
+      } catch (error) {
+        // Error already shown
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Get Balance';
+        }
+      }
+    }
+
+    async function getNodeInfo() {
+      const btn = document.querySelector('button[onclick="getNodeInfo()"]');
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="loading"></span> Loading...';
+        }
+        const result = await apiCall('/network/node-info');
+        const nodeInfo = document.getElementById('nodeInfo');
+        nodeInfo.innerHTML = `
+          <strong>Local Node Information</strong>
+          <div>Version: <strong>${result.data.version}</strong></div>
+          <div>Public Key: <strong style="font-family: monospace; font-size: 11px;">${result.data.publicKey.substring(0, 32)}...</strong></div>
+          <div>Addresses: <strong>${result.data.addresses.length}</strong></div>
+          <div>State: <strong>${result.data.state}</strong></div>
+        `;
+        nodeInfo.style.display = 'block';
+        showMessage('Node info retrieved', 'success');
+      } catch (error) {
+        // Error already shown
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Get Local Node Info';
+        }
+      }
+    }
+
+    async function createContainer() {
+      const name = document.getElementById('containerNameInput').value;
+      const btn = document.querySelector('button[onclick="createContainer()"]');
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="loading"></span>';
+        }
+        const result = await apiCall('/containers/create', {
+          method: 'POST',
+          body: JSON.stringify({ name }),
+        });
+        showMessage(`Container created: ${result.data.containerId.substring(0, 16)}...`, 'success');
+        document.getElementById('containerNameInput').value = '';
+        await loadContainers();
+      } catch (error) {
+        // Error already shown
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = '+ Create';
+        }
+      }
+    }
+
+    async function loadContainers() {
+      const btn = document.querySelector('button[onclick="loadContainers()"]');
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="loading"></span>';
+        }
+        const result = await apiCall('/containers');
+        const list = document.getElementById('containersList');
+        if (result.data.length === 0) {
+          list.innerHTML = '<div class="empty-state">No containers found<br><small>Create one using the toolbar above</small></div>';
+          return;
+        }
+        
+        // Render containers with expand/collapse
+        list.innerHTML = result.data.map(container => {
+          const isExpanded = state.expandedContainers.has(container.id);
+          const containerState = state.containerPages[container.id] || { page: 1, totalPages: 1, totalObjects: 0 };
+          const escapedName = (container.name || 'Unnamed Container').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+          
+          return `
+            <div class="browser-item container-item" data-container-id="${container.id}">
+              <div class="container-header ${isExpanded ? 'expanded' : ''}" onclick="toggleContainer('${container.id}')">
+                <div class="container-header-info">
+                  <span class="expand-icon">▶</span>
+                  <div class="browser-item-info">
+                    <div class="browser-item-name">${escapedName}</div>
+                    <div class="browser-item-id">${container.id}</div>
+                  </div>
+                </div>
+                <div class="browser-item-actions">
+                  <button class="small danger" onclick="event.stopPropagation(); deleteContainer('${container.id}')">Delete</button>
+                </div>
+              </div>
+              <div class="container-content ${isExpanded ? 'expanded' : ''}" id="container-${container.id}-content">
+                <div class="container-objects">
+                  <div class="container-objects-header">
+                    <span class="container-objects-count" id="container-${container.id}-count">Loading...</span>
+                    <button class="small secondary" onclick="event.stopPropagation(); loadContainerObjects('${container.id}')">Refresh</button>
+                  </div>
+                  <div class="browser-list" id="container-${container.id}-objects">
+                    <div class="empty-state">Loading objects...</div>
+                  </div>
+                  <div class="pagination" id="container-${container.id}-pagination" style="display: none; margin-top: 12px;">
+                    <button class="small" id="container-${container.id}-prev" onclick="event.stopPropagation(); changeContainerPage('${container.id}', -1)" disabled>← Prev</button>
+                    <span id="container-${container.id}-page-info">Page 1 of 1</span>
+                    <button class="small" id="container-${container.id}-next" onclick="event.stopPropagation(); changeContainerPage('${container.id}', 1)" disabled>Next →</button>
+                  </div>
+                  <div class="object-upload" style="margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--border);">
+                    <div class="object-upload-row">
+                      <div class="form-group" style="flex: 1;">
+                        <textarea id="container-${container.id}-data" rows="2" placeholder="Enter data to store..." style="width: 100%;"></textarea>
+                      </div>
+                    </div>
+                    <div class="object-upload-row" style="margin-top: 12px;">
+                      <div class="form-group" style="flex: 1;">
+                        <input type="text" id="container-${container.id}-filename" placeholder="filename.txt (optional)" style="width: 100%;">
+                      </div>
+                      <button onclick="event.stopPropagation(); uploadObjectToContainer('${container.id}')">Upload Object</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          `;
+        }).join('');
+        
+        // Load objects for expanded containers
+        for (const containerId of state.expandedContainers) {
+          await loadContainerObjects(containerId);
+        }
+      } catch (error) {
+        // Error already shown
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Refresh';
+        }
+      }
+    }
+    
+    async function toggleContainer(containerId) {
+      if (state.expandedContainers.has(containerId)) {
+        state.expandedContainers.delete(containerId);
+      } else {
+        state.expandedContainers.add(containerId);
+        // Load objects when expanding
+        await loadContainerObjects(containerId);
+      }
+      await loadContainers(); // Re-render to update expansion state
+    }
+    
+    async function loadContainerObjects(containerId, page = null) {
+      try {
+        // Select container first
+        await apiCall(`/containers/${containerId}/select`, { method: 'POST' });
+        
+        const containerState = state.containerPages[containerId] || { page: 1, totalPages: 1, totalObjects: 0 };
+        const targetPage = page || containerState.page;
+        
+        const result = await apiCall(`/objects?page=${targetPage}&limit=${state.pageSize}`);
+        
+        // Update container state
+        state.containerPages[containerId] = {
+          page: result.pagination.page,
+          totalPages: result.pagination.totalPages,
+          totalObjects: result.pagination.totalCount,
+        };
+        
+        const objectsList = document.getElementById(`container-${containerId}-objects`);
+        const countEl = document.getElementById(`container-${containerId}-count`);
+        const paginationEl = document.getElementById(`container-${containerId}-pagination`);
+        const pageInfoEl = document.getElementById(`container-${containerId}-page-info`);
+        const prevBtn = document.getElementById(`container-${containerId}-prev`);
+        const nextBtn = document.getElementById(`container-${containerId}-next`);
+        
+        countEl.textContent = `${result.pagination.totalCount} objects`;
+        
+        if (result.data.length === 0 && result.pagination.totalCount === 0) {
+          objectsList.innerHTML = '<div class="empty-state">No objects in this container<br><small>Upload one using the form below</small></div>';
+          paginationEl.style.display = 'none';
+          return;
+        }
+        
+        objectsList.innerHTML = result.data.map(obj => `
+          <div class="object-item">
+            <div class="browser-item-info">
+              <div class="browser-item-name">${obj.filename || 'Unnamed'}</div>
+              <div class="browser-item-id">${obj.id.substring(0, 16)}...</div>
+              <div class="browser-item-meta">${obj.size ? formatSize(obj.size) : ''}</div>
+            </div>
+            <div class="browser-item-actions">
+              <button class="small" onclick="event.stopPropagation(); downloadObject('${obj.id}')" title="Download">Download</button>
+              <button class="small danger" onclick="event.stopPropagation(); deleteObject('${obj.id}', '${containerId}')" title="Delete">Delete</button>
+            </div>
+          </div>
+        `).join('');
+        
+        // Update pagination
+        if (result.pagination.totalPages > 1) {
+          paginationEl.style.display = 'flex';
+          pageInfoEl.textContent = `Page ${result.pagination.page} of ${result.pagination.totalPages}`;
+          prevBtn.disabled = !result.pagination.hasPrev;
+          nextBtn.disabled = !result.pagination.hasNext;
+        } else {
+          paginationEl.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('loadContainerObjects error:', error);
+        const objectsList = document.getElementById(`container-${containerId}-objects`);
+        if (objectsList) {
+          objectsList.innerHTML = '<div class="empty-state">Error loading objects<br><small>Check console for details</small></div>';
+        }
+      }
+    }
+    
+    function changeContainerPage(containerId, delta) {
+      const containerState = state.containerPages[containerId] || { page: 1, totalPages: 1 };
+      const newPage = containerState.page + delta;
+      if (newPage >= 1 && newPage <= containerState.totalPages) {
+        loadContainerObjects(containerId, newPage);
+      }
+    }
+    
+    async function uploadObjectToContainer(containerId) {
+      const dataEl = document.getElementById(`container-${containerId}-data`);
+      const filenameEl = document.getElementById(`container-${containerId}-filename`);
+      const data = dataEl.value;
+      const filename = filenameEl.value;
+      
+      if (!data) {
+        showMessage('Please enter data', 'error');
+        return;
+      }
+      
+      try {
+        // Select container first
+        await apiCall(`/containers/${containerId}/select`, { method: 'POST' });
+        
+        const result = await apiCall('/objects/put', {
+          method: 'POST',
+          body: JSON.stringify({ data, filename }),
+        });
+        
+        showMessage(`Object stored: ${result.data.objectId.substring(0, 16)}...`, 'success');
+        dataEl.value = '';
+        filenameEl.value = '';
+        
+        // Reload objects for this container
+        await loadContainerObjects(containerId);
+      } catch (error) {
+        // Error already shown
+      }
+    }
+
+    async function selectContainer(containerId, containerName) {
+      console.log('selectContainer called:', containerId, containerName);
+      try {
+        const result = await apiCall(`/containers/${containerId}/select`, { method: 'POST' });
+        console.log('Container selected result:', result);
+        
+        state.selectedContainer = containerId;
+        state.selectedContainerName = containerName || null;
+        state.currentPage = 1; // Reset to first page
+        
+        // Update container list to show selection
+        document.querySelectorAll('#containersList .browser-item').forEach(item => {
+          item.classList.remove('selected');
+          if (item.getAttribute('data-id') === containerId) {
+            item.classList.add('selected');
+          }
+        });
+        
+        // Update UI (this will also show the objects panel)
+        updateUI();
+        
+        showMessage('Container selected', 'success');
+        
+        // Load objects in the selected container
+        await loadObjects();
+      } catch (error) {
+        console.error('selectContainer error:', error);
+        // Error already shown by apiCall
+      }
+    }
+
+    async function deleteContainer(containerId) {
+      if (!confirm('Are you sure you want to delete this container?')) return;
+      try {
+        await apiCall(`/containers/${containerId}`, { method: 'DELETE' });
+        showMessage('Container deleted', 'success');
+        // Clean up state
+        state.expandedContainers.delete(containerId);
+        delete state.containerPages[containerId];
+        await loadContainers();
+      } catch (error) {
+        // Error already shown
+      }
+    }
+
+    async function putObject() {
+      console.log('putObject called, selectedContainer:', state.selectedContainer);
+      if (!state.selectedContainer) {
+        showMessage('Please select a container first', 'error');
+        return;
+      }
+      const data = document.getElementById('objectDataInput').value;
+      const filename = document.getElementById('objectFilenameInput').value;
+      if (!data) {
+        showMessage('Please enter data', 'error');
+        return;
+      }
+      const btn = document.querySelector('button[onclick="putObject()"]');
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="loading"></span> Uploading...';
+        }
+        console.log('Putting object with data length:', data.length, 'filename:', filename);
+        const result = await apiCall('/objects/put', {
+          method: 'POST',
+          body: JSON.stringify({ data, filename }),
+        });
+        console.log('putObject result:', result);
+        showMessage(`Object stored: ${result.data.objectId.substring(0, 16)}...`, 'success');
+        document.getElementById('objectDataInput').value = '';
+        document.getElementById('objectFilenameInput').value = '';
+        await loadObjects();
+      } catch (error) {
+        console.error('putObject error:', error);
+        // Error already shown by apiCall
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Upload Object';
+        }
+      }
+    }
+
+    async function loadObjects(page = 1) {
+      console.log('loadObjects called, selectedContainer:', state.selectedContainer, 'page:', page);
+      if (!state.selectedContainer) {
+        document.getElementById('objectsList').innerHTML = '<div class="empty-state">Select a container<br><small>Click on a container to view its objects</small></div>';
+        document.getElementById('objectsPagination').style.display = 'none';
+        document.getElementById('objectCount').textContent = '';
+        return;
+      }
+      const btn = document.querySelector('button[onclick="loadObjects()"]');
+      const list = document.getElementById('objectsList');
+      const pagination = document.getElementById('objectsPagination');
+      
+      try {
+        if (btn) {
+          btn.disabled = true;
+          btn.innerHTML = '<span class="loading"></span>';
+        }
+        list.innerHTML = '<div class="empty-state">Loading objects...</div>';
+        
+        const result = await apiCall(`/objects?page=${page}&limit=${state.pageSize}`);
+        console.log('loadObjects result:', result);
+        
+        // Update pagination state
+        state.currentPage = result.pagination.page;
+        state.totalPages = result.pagination.totalPages;
+        state.totalObjects = result.pagination.totalCount;
+        
+        // Update object count display
+        document.getElementById('objectCount').textContent = `${result.pagination.totalCount} objects total`;
+        
+        if (result.data.length === 0 && result.pagination.totalCount === 0) {
+          list.innerHTML = '<div class="empty-state">No objects in this container<br><small>Upload one using the form below</small></div>';
+          pagination.style.display = 'none';
+          return;
+        }
+        
+        list.innerHTML = result.data.map(obj => `
+          <div class="browser-item">
+            <div class="browser-item-info">
+              <div class="browser-item-name">${obj.filename || 'Unnamed'}</div>
+              <div class="browser-item-id">${obj.id.substring(0, 16)}...</div>
+              <div class="browser-item-meta">${obj.size ? formatSize(obj.size) : ''}</div>
+            </div>
+            <div class="browser-item-actions">
+              <button class="small" onclick="downloadObject('${obj.id}')" title="Download">Download</button>
+              <button class="small danger" onclick="deleteObject('${obj.id}')" title="Delete">Delete</button>
+            </div>
+          </div>
+        `).join('');
+        
+        // Update pagination UI
+        if (result.pagination.totalPages > 1) {
+          pagination.style.display = 'flex';
+          document.getElementById('pageInfo').textContent = `Page ${result.pagination.page} of ${result.pagination.totalPages}`;
+          document.getElementById('prevPageBtn').disabled = !result.pagination.hasPrev;
+          document.getElementById('nextPageBtn').disabled = !result.pagination.hasNext;
+        } else {
+          pagination.style.display = 'none';
+        }
+      } catch (error) {
+        console.error('loadObjects error:', error);
+        list.innerHTML = '<div class="empty-state">Error loading objects<br><small>Check console for details</small></div>';
+        pagination.style.display = 'none';
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = 'Refresh';
+        }
+      }
+    }
+    
+    function changePage(delta) {
+      const newPage = state.currentPage + delta;
+      if (newPage >= 1 && newPage <= state.totalPages) {
+        loadObjects(newPage);
+      }
+    }
+
+    async function deleteObject(objectId, containerId) {
+      if (!confirm('Are you sure you want to delete this object?')) return;
+      try {
+        await apiCall(`/objects/${objectId}`, { method: 'DELETE' });
+        showMessage('Object deleted', 'success');
+        // Reload objects for the container
+        await loadContainerObjects(containerId);
+      } catch (error) {
+        // Error already shown
+      }
+    }
+
+    async function downloadObject(objectId) {
+      try {
+        showMessage('Downloading...', 'info');
+        // Create a link to trigger download
+        const link = document.createElement('a');
+        link.href = `/api/objects/${objectId}/download`;
+        link.download = ''; // Browser will use the filename from Content-Disposition
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        showMessage('Download started', 'success');
+      } catch (error) {
+        showMessage(`Download failed: ${error.message}`, 'error');
+      }
+    }
+
+    function formatSize(bytes) {
+      const num = parseInt(bytes) || 0;
+      if (num === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(num) / Math.log(k));
+      return parseFloat((num / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    // Initialize
+    async function init() {
+      await updateState();
+      // Auto-load containers if connected
+      if (state.connected) {
+        await loadContainers();
+      }
+    }
+    
+    init();
+    setInterval(updateState, 5000);
+  </script>
+</body>
+</html>
