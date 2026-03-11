@@ -2,7 +2,7 @@ import { NeoFSClient } from './client';
 import { ContainerID, ObjectID, Address, ObjectGetResult } from '../types';
 import { ObjectGetParams } from './object';
 import { SessionClient, SessionToken } from './session';
-import { Signer, publicKeyBytes } from 'neofs-sdk-ts-core/crypto';
+import { Signer, publicKeyBytes } from '@axlabs/neofs-sdk-ts-core/crypto';
 import { NeoFsV2Refs } from '../gen/refs/types_pb';
 import { NeoFsV2Session } from '../gen/session/types_pb';
 import { NeoFsV2Object } from '../gen/object/types_pb';

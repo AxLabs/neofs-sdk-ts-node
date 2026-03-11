@@ -1,5 +1,5 @@
 import { NeoFSClient } from './client';
-import { Signer, publicKeyBytes } from 'neofs-sdk-ts-core/crypto';
+import { Signer, publicKeyBytes } from '@axlabs/neofs-sdk-ts-core/crypto';
 import { ObjectID, ContainerID } from '../types';
 import * as grpc from '@grpc/grpc-js';
 import * as crypto from 'crypto';

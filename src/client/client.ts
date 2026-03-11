@@ -1,4 +1,4 @@
-import { Signer } from 'neofs-sdk-ts-core/crypto';
+import { Signer } from '@axlabs/neofs-sdk-ts-core/crypto';
 import { AccountingClient } from './accounting';
 import { NetmapClient } from './netmap';
 import { ContainerClient } from './container';

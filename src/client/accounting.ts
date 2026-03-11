@@ -1,6 +1,6 @@
 import { ClientConfig } from './client';
-import { Signer, NeoFSSignature, signRequestWithBuffer, publicKeyBytes } from 'neofs-sdk-ts-core/crypto';
-import { Decimal } from 'neofs-sdk-ts-core/types';
+import { Signer, NeoFSSignature, signRequestWithBuffer, publicKeyBytes } from '@axlabs/neofs-sdk-ts-core/crypto';
+import { Decimal } from '@axlabs/neofs-sdk-ts-core/types';
 
 // Import proto definitions - using our generated classes
 import { AccountingServiceClient } from '../gen/accounting/service_grpc_pb';

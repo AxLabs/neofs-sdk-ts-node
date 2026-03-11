@@ -21,9 +21,9 @@ import {
   type Signer,
   publicKeyBytes,
   tzHash,
-} from 'neofs-sdk-ts-core/crypto';
-import { ownerIdFromPublicKey } from 'neofs-sdk-ts-core/user';
-import { Decimal } from 'neofs-sdk-ts-core/types';
+} from '@axlabs/neofs-sdk-ts-core/crypto';
+import { ownerIdFromPublicKey } from '@axlabs/neofs-sdk-ts-core/user';
+import { Decimal } from '@axlabs/neofs-sdk-ts-core/types';
 import * as crypto from 'crypto';
 
 const __filename = fileURLToPath(import.meta.url);

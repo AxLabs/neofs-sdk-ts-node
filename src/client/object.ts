@@ -1,5 +1,5 @@
 import { NeoFSClient } from '../client';
-import { Signer, PublicKey } from 'neofs-sdk-ts-core/crypto';
+import { Signer, PublicKey } from '@axlabs/neofs-sdk-ts-core/crypto';
 import { ContainerID, ObjectID, Address, ObjectGetResult } from '../types';
 import { ObjectClient as StreamingObjectClient } from './object-streaming';
 

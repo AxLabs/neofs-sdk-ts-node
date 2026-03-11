@@ -1,5 +1,5 @@
 import { ClientConfig } from './client';
-import { Signer, NeoFSSignature, publicKeyBytes, ECDSASignerRFC6979 } from 'neofs-sdk-ts-core/crypto';
+import { Signer, NeoFSSignature, publicKeyBytes, ECDSASignerRFC6979 } from '@axlabs/neofs-sdk-ts-core/crypto';
 import { NodeState, NodeAttribute } from './netmap';
 import { ContainerID } from '../types';
 

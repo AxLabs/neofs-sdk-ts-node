@@ -1,5 +1,5 @@
 import { ClientConfig } from './client';
-import { Signer, NeoFSSignature, publicKeyBytes } from 'neofs-sdk-ts-core/crypto';
+import { Signer, NeoFSSignature, publicKeyBytes } from '@axlabs/neofs-sdk-ts-core/crypto';
 
 // Import proto definitions - using our generated classes
 import { NetmapServiceClient } from '../gen/netmap/service_grpc_pb';

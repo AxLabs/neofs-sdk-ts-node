@@ -8,7 +8,7 @@
 import { NeoFsV2Acl } from '../gen/acl/types_pb';
 import { NeoFsV2Refs } from '../gen/refs/types_pb';
 import { Table } from '../eacl';
-import { Signer, publicKeyBytes } from 'neofs-sdk-ts-core/crypto';
+import { Signer, publicKeyBytes } from '@axlabs/neofs-sdk-ts-core/crypto';
 
 /**
  * Token lifetime parameters.

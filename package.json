@@ -1,6 +1,6 @@
 {
-  "name": "neofs-sdk-ts-node",
-  "version": "0.1.0",
+  "name": "@axlabs/neofs-sdk-ts-node",
+  "version": "0.0.1",
   "description": "TypeScript SDK for NeoFS - Node.js Edition",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -27,17 +27,18 @@
     "format": "prettier --write src/**/*.ts",
     "clean": "rm -rf dist",
     "prebuild": "npm run clean",
-    "prepublishOnly": "npm run build"
+    "prepublishOnly": "npm run build",
+    "publish:dry-run": "npm publish --dry-run",
+    "publish:public": "npm publish --access public"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/nspcc-dev/neofs-sdk-ts.git",
-    "directory": "neofs-sdk-ts-node"
+    "url": "https://github.com/axlabs/neofs-sdk-ts-node.git"
   },
   "bugs": {
-    "url": "https://github.com/nspcc-dev/neofs-sdk-ts/issues"
+    "url": "https://github.com/axlabs/neofs-sdk-ts-node/issues"
   },
-  "homepage": "https://github.com/nspcc-dev/neofs-sdk-ts#readme",
+  "homepage": "https://github.com/axlabs/neofs-sdk-ts-node#readme",
   "keywords": [
     "neofs",
     "blockchain",
@@ -46,7 +47,7 @@
     "sdk",
     "nodejs"
   ],
-  "author": "NeoFS Team",
+  "author": "AxLabs Team",
   "license": "Apache-2.0",
   "devDependencies": {
     "@types/elliptic": "^6.4.18",
@@ -64,7 +65,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.14.0",
     "@grpc/proto-loader": "^0.8.0",
-    "neofs-sdk-ts-core": "^0.1.0",
+    "@axlabs/neofs-sdk-ts-core": "^0.0.1",
     "ripemd160": "^2.0.3"
   },
   "files": [

@@ -20,9 +20,9 @@ import {
   ECDSASignerRFC6979,
   type Signer,
   publicKeyBytes,
-} from 'neofs-sdk-ts-core/crypto';
-import { ownerIdFromPublicKey } from 'neofs-sdk-ts-core/user';
-import { Decimal } from 'neofs-sdk-ts-core/types';
+} from '@axlabs/neofs-sdk-ts-core/crypto';
+import { ownerIdFromPublicKey } from '@axlabs/neofs-sdk-ts-core/user';
+import { Decimal } from '@axlabs/neofs-sdk-ts-core/types';
 import * as crypto from 'crypto';
 
 // Helper to convert bytes to hex
