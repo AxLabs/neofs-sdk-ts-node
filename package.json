@@ -33,12 +33,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/axlabs/neofs-sdk-ts-node.git"
+    "url": "https://github.com/AxLabs/neofs-sdk-ts-node"
   },
   "bugs": {
-    "url": "https://github.com/axlabs/neofs-sdk-ts-node/issues"
+    "url": "https://github.com/AxLabs/neofs-sdk-ts-node/issues"
   },
-  "homepage": "https://github.com/axlabs/neofs-sdk-ts-node#readme",
+  "homepage": "https://github.com/AxLabs/neofs-sdk-ts-node#readme",
   "keywords": [
     "neofs",
     "blockchain",
