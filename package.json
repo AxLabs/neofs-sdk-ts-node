@@ -65,7 +65,7 @@
   "dependencies": {
     "@grpc/grpc-js": "^1.14.0",
     "@grpc/proto-loader": "^0.8.0",
-    "@axlabs/neofs-sdk-ts-core": "^0.0.1",
+    "@axlabs/neofs-sdk-ts-core": "^0.0.2",
     "ripemd160": "^2.0.3"
   },
   "files": [
