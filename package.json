@@ -1,6 +1,6 @@
 {
   "name": "@axlabs/neofs-sdk-ts-node",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "TypeScript SDK for NeoFS - Node.js Edition",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
   },
   "scripts": {
     "build": "tsc && cp -r src/gen dist/ 2>/dev/null || true",
-    "generate": "protoc --plugin=./bin/protoc-gen-grpc-ts --grpc-ts_out=target=nodejs:src/gen -I neofs-api neofs-api/accounting/service.proto neofs-api/accounting/types.proto neofs-api/acl/types.proto neofs-api/audit/types.proto neofs-api/container/service.proto neofs-api/container/types.proto neofs-api/link/types.proto neofs-api/lock/types.proto neofs-api/netmap/service.proto neofs-api/netmap/types.proto neofs-api/object/service.proto neofs-api/object/types.proto neofs-api/refs/types.proto neofs-api/reputation/service.proto neofs-api/reputation/types.proto neofs-api/session/service.proto neofs-api/session/types.proto neofs-api/status/types.proto neofs-api/storagegroup/types.proto neofs-api/subnet/types.proto neofs-api/tombstone/types.proto",
+    "generate": "sh scripts/ensure-protoc-gen-grpc-ts.sh && protoc --plugin=./bin/protoc-gen-grpc-ts --grpc-ts_out=target=nodejs:src/gen -I neofs-api neofs-api/accounting/service.proto neofs-api/accounting/types.proto neofs-api/acl/types.proto neofs-api/audit/types.proto neofs-api/container/service.proto neofs-api/container/types.proto neofs-api/link/types.proto neofs-api/lock/types.proto neofs-api/netmap/service.proto neofs-api/netmap/types.proto neofs-api/object/service.proto neofs-api/object/types.proto neofs-api/refs/types.proto neofs-api/reputation/service.proto neofs-api/reputation/types.proto neofs-api/session/service.proto neofs-api/session/types.proto neofs-api/status/types.proto neofs-api/storagegroup/types.proto neofs-api/subnet/types.proto neofs-api/tombstone/types.proto",
     "generate:clean": "rm -rf src/gen/* && mkdir -p src/gen",
     "generate:all": "sh scripts/ensure-protoc-gen-grpc-ts.sh && npm run generate:clean && npm run generate",
     "test": "jest --passWithNoTests",

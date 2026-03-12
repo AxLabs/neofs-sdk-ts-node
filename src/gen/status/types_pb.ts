@@ -7,7 +7,8 @@ class BinaryWriter {
 
   private ensureCapacity(needed: number): void {
     if (this.position + needed > this.buffer.length) {
-      const newBuffer = new Uint8Array(this.buffer.length * 2);
+      const minSize = this.position + needed
+      const newBuffer = new Uint8Array(Math.max(this.buffer.length * 2, minSize))
       newBuffer.set(this.buffer);
       this.buffer = newBuffer;
     }
