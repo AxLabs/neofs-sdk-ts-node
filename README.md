@@ -1,6 +1,6 @@
 # NeoFS TypeScript SDK for Node.js
 
-A Node.js TypeScript SDK for [NeoFS](https://neofs.io/) - a decentralized, distributed object storage network.
+A Node.js TypeScript SDK for [NeoFS](https://fs.neo.org/) - a decentralized, distributed object storage network.
 
 ## Features
 
@@ -13,13 +13,13 @@ A Node.js TypeScript SDK for [NeoFS](https://neofs.io/) - a decentralized, distr
 ## Installation
 
 ```bash
-npm install neofs-sdk-ts-node
+npm install @axlabs/neofs-sdk-ts-node
 ```
 
 ## Quick Start
 
 ```typescript
-import { NeoFSClient, ECDSASigner } from 'neofs-sdk-ts-node';
+import { NeoFSClient, ECDSASigner } from '@axlabs/neofs-sdk-ts-node';
 
 // Create a signer from your private key
 const signer = ECDSASigner.fromHex(privateKeyHex);
@@ -65,7 +65,7 @@ console.log('Content:', Buffer.from(result.payload).toString());
 ### Client Initialization
 
 ```typescript
-import { NeoFSClient, ECDSASigner, ECDSASignerRFC6979 } from 'neofs-sdk-ts-node';
+import { NeoFSClient, ECDSASigner, ECDSASignerRFC6979 } from '@axlabs/neofs-sdk-ts-node';
 
 // From hex private key
 const signer = ECDSASigner.fromHex('your-private-key-hex');
@@ -154,7 +154,7 @@ await client.object().delete({
 For large files, use the streaming client:
 
 ```typescript
-import { StreamingObjectClient } from 'neofs-sdk-ts-node';
+import { StreamingObjectClient } from '@axlabs/neofs-sdk-ts-node';
 
 // The streaming client handles chunked uploads automatically
 const objectId = await client.object().put({
@@ -193,7 +193,7 @@ console.log('Session ID:', session.id);
 ### EACL (Extended Access Control)
 
 ```typescript
-import { Table, Target, Record, Operation, publicReadEACL } from 'neofs-sdk-ts-node';
+import { Table, Target, Record, Operation, publicReadEACL } from '@axlabs/neofs-sdk-ts-node';
 
 // Use a preset
 const eacl = publicReadEACL(containerId);
@@ -217,7 +217,7 @@ const currentEacl = await client.container().getEACL({ containerId });
 ### Bearer Tokens
 
 ```typescript
-import { BearerToken, publicReadEACL } from 'neofs-sdk-ts-node';
+import { BearerToken, publicReadEACL } from '@axlabs/neofs-sdk-ts-node';
 
 // Create a bearer token for delegated access
 const token = new BearerToken()
@@ -238,7 +238,7 @@ const tokenBytes = token.serialize();
 ### Waiter (Async Confirmation)
 
 ```typescript
-import { Waiter } from 'neofs-sdk-ts-node';
+import { Waiter } from '@axlabs/neofs-sdk-ts-node';
 
 const waiter = new Waiter(client);
 
