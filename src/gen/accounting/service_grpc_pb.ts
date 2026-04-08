@@ -15,7 +15,7 @@ export class AccountingServiceClient {
   balance(request: BalanceRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<BalanceResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<BalanceRequest, BalanceResponse>(
-        'neo.fs.v2.accounting.AccountingService/Balance',
+        '/neo.fs.v2.accounting.AccountingService/Balance',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => BalanceResponse.deserializeBinary(new Uint8Array(buf)),
         request,

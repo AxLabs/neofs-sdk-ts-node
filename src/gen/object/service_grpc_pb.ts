@@ -14,7 +14,7 @@ export class ObjectServiceClient {
 
   get(request: GetRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientReadableStream<GetResponse> {
     return this.client.makeServerStreamRequest<GetRequest, GetResponse>(
-      'neo.fs.v2.object.ObjectService/Get',
+      '/neo.fs.v2.object.ObjectService/Get',
       (arg) => Buffer.from(arg.serializeBinary()),
       (buf) => GetResponse.deserializeBinary(new Uint8Array(buf)),
       request,
@@ -32,7 +32,7 @@ export class ObjectServiceClient {
     });
 
     return this.client.makeClientStreamRequest<PutRequest, PutResponse>(
-      'neo.fs.v2.object.ObjectService/Put',
+      '/neo.fs.v2.object.ObjectService/Put',
       (arg) => Buffer.from(arg.serializeBinary()),
       (buf) => PutResponse.deserializeBinary(new Uint8Array(buf)),
       metadata || new grpc.Metadata(),
@@ -44,7 +44,7 @@ export class ObjectServiceClient {
   delete(request: DeleteRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<DeleteResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<DeleteRequest, DeleteResponse>(
-        'neo.fs.v2.object.ObjectService/Delete',
+        '/neo.fs.v2.object.ObjectService/Delete',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => DeleteResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -64,7 +64,7 @@ export class ObjectServiceClient {
   head(request: HeadRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<HeadResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<HeadRequest, HeadResponse>(
-        'neo.fs.v2.object.ObjectService/Head',
+        '/neo.fs.v2.object.ObjectService/Head',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => HeadResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -83,7 +83,7 @@ export class ObjectServiceClient {
 
   search(request: SearchRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientReadableStream<SearchResponse> {
     return this.client.makeServerStreamRequest<SearchRequest, SearchResponse>(
-      'neo.fs.v2.object.ObjectService/Search',
+      '/neo.fs.v2.object.ObjectService/Search',
       (arg) => Buffer.from(arg.serializeBinary()),
       (buf) => SearchResponse.deserializeBinary(new Uint8Array(buf)),
       request,
@@ -95,7 +95,7 @@ export class ObjectServiceClient {
   searchV2(request: SearchV2Request, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<SearchV2Response> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<SearchV2Request, SearchV2Response>(
-        'neo.fs.v2.object.ObjectService/SearchV2',
+        '/neo.fs.v2.object.ObjectService/SearchV2',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => SearchV2Response.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -114,7 +114,7 @@ export class ObjectServiceClient {
 
   getRange(request: GetRangeRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): grpc.ClientReadableStream<GetRangeResponse> {
     return this.client.makeServerStreamRequest<GetRangeRequest, GetRangeResponse>(
-      'neo.fs.v2.object.ObjectService/GetRange',
+      '/neo.fs.v2.object.ObjectService/GetRange',
       (arg) => Buffer.from(arg.serializeBinary()),
       (buf) => GetRangeResponse.deserializeBinary(new Uint8Array(buf)),
       request,
@@ -126,7 +126,7 @@ export class ObjectServiceClient {
   getRangeHash(request: GetRangeHashRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<GetRangeHashResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<GetRangeHashRequest, GetRangeHashResponse>(
-        'neo.fs.v2.object.ObjectService/GetRangeHash',
+        '/neo.fs.v2.object.ObjectService/GetRangeHash',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => GetRangeHashResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -146,7 +146,7 @@ export class ObjectServiceClient {
   replicate(request: ReplicateRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<ReplicateResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<ReplicateRequest, ReplicateResponse>(
-        'neo.fs.v2.object.ObjectService/Replicate',
+        '/neo.fs.v2.object.ObjectService/Replicate',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => ReplicateResponse.deserializeBinary(new Uint8Array(buf)),
         request,

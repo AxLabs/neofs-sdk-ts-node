@@ -15,7 +15,7 @@ export class SessionServiceClient {
   create(request: CreateRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<CreateResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<CreateRequest, CreateResponse>(
-        'neo.fs.v2.session.SessionService/Create',
+        '/neo.fs.v2.session.SessionService/Create',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => CreateResponse.deserializeBinary(new Uint8Array(buf)),
         request,

@@ -110,6 +110,11 @@ export class ObjectClient {
     return this.streamingClient.delete(params);
   }
 
+  /**
+   * Search for objects in a container (legacy streaming API).
+   *
+   * @deprecated NeoFS protocol marks `ObjectService/Search` as deprecated. Use `searchV2()` instead.
+   */
   async search(params: ObjectSearchParams): Promise<ObjectID[]> {
     return this.streamingClient.search(params);
   }

@@ -43,6 +43,13 @@ export interface WaiterOptions {
    * @default 30000
    */
   timeout?: number;
+  
+  /**
+   * Delay in milliseconds before the first confirmation check.
+   * Use when the service needs a moment after Put before Get can see the resource (e.g. gateway propagation).
+   * @default 2000
+   */
+  initialDelay?: number;
 }
 
 /**
@@ -95,9 +102,11 @@ function isNotFoundError(error: Error): boolean {
   const message = error.message.toLowerCase();
   // Container not found: code 3072
   // Object not found: code 2049
-  return message.includes('code: 3072') || 
+  // gRPC-style: NOT_FOUND / not_found
+  return message.includes('code: 3072') ||
          message.includes('code: 2049') ||
-         message.includes('not found');
+         message.includes('not found') ||
+         message.includes('not_found');
 }
 
 /**
@@ -163,6 +172,9 @@ export class Waiter {
 
     const pollInterval = waiterOptions?.pollInterval ?? this.defaultPollInterval;
     const timeout = waiterOptions?.timeout ?? this.defaultTimeout;
+    const initialDelay = waiterOptions?.initialDelay ?? 2000;
+
+    await new Promise(resolve => setTimeout(resolve, initialDelay));
 
     await poll(
       async (): Promise<PollResult> => {

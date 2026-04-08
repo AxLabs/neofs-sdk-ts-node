@@ -15,7 +15,7 @@ export class NetmapServiceClient {
   localNodeInfo(request: LocalNodeInfoRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<LocalNodeInfoResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<LocalNodeInfoRequest, LocalNodeInfoResponse>(
-        'neo.fs.v2.netmap.NetmapService/LocalNodeInfo',
+        '/neo.fs.v2.netmap.NetmapService/LocalNodeInfo',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => LocalNodeInfoResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -35,7 +35,7 @@ export class NetmapServiceClient {
   networkInfo(request: NetworkInfoRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<NetworkInfoResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<NetworkInfoRequest, NetworkInfoResponse>(
-        'neo.fs.v2.netmap.NetmapService/NetworkInfo',
+        '/neo.fs.v2.netmap.NetmapService/NetworkInfo',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => NetworkInfoResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -55,7 +55,7 @@ export class NetmapServiceClient {
   netmapSnapshot(request: NetmapSnapshotRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<NetmapSnapshotResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<NetmapSnapshotRequest, NetmapSnapshotResponse>(
-        'neo.fs.v2.netmap.NetmapService/NetmapSnapshot',
+        '/neo.fs.v2.netmap.NetmapService/NetmapSnapshot',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => NetmapSnapshotResponse.deserializeBinary(new Uint8Array(buf)),
         request,

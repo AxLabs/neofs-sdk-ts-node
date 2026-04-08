@@ -661,6 +661,8 @@ export class ObjectClient {
   /**
    * Search for objects in a container.
    * NO session tokens - uses verification headers like React Native client.
+   *
+   * @deprecated NeoFS protocol marks `ObjectService/Search` as deprecated. Use `searchV2()` instead.
    */
   async search(params: ObjectSearchParams): Promise<ObjectID[]> {
     // Set body

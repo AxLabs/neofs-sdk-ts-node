@@ -9,13 +9,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import {
   NeoFSClient,
+  Waiter,
   type ClientConfig,
   type NetworkInfo,
   type Container,
   type ContainerID,
   type ObjectHeader,
   type ObjectID,
-} from 'neofs-sdk-ts-node';
+} from '@axlabs/neofs-sdk-ts-node';
 import {
   ECDSASignerRFC6979,
   type Signer,
@@ -75,7 +76,7 @@ interface AppState {
 const state: AppState = {
   client: null,
   signer: null,
-  endpoint: 'grpc://st1.t5.fs.neo.org:8080',
+  endpoint: 'grpcs://st1.t5.fs.neo.org:8082',
   networkInfo: null,
   balance: null,
   containerIds: [],
@@ -89,6 +90,11 @@ const state: AppState = {
 const app = express();
 app.use(express.json());
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Avoid 404 for browser favicon request
+app.get('/favicon.ico', (_req, res) => {
+  res.status(204).end();
+});
 
 // API Routes
 
@@ -271,12 +277,15 @@ app.get('/api/containers', async (req, res) => {
     if (!state.client) {
       return res.status(400).json({ error: 'Not connected' });
     }
-    
+    if (!state.signer) {
+      return res.status(400).json({ error: 'No key loaded. Load or generate a key first.' });
+    }
+
     const containerIds = await state.client.container().list();
     state.containerIds = containerIds;
-    
-    // Fetch info for each container
+
     const containers: any[] = [];
+    const attributes = (c: Container) => c.attributes ?? [];
     for (const containerId of containerIds) {
       try {
         const container = await state.client.container().get({ containerId });
@@ -284,7 +293,7 @@ app.get('/api/containers', async (req, res) => {
         state.containers.set(containerIdHex, container);
         containers.push({
           id: containerIdHex,
-          name: container.attributes.find(a => a.key === 'Name')?.value || 'Unnamed',
+          name: attributes(container).find((a: { key: string }) => a.key === 'Name')?.value || 'Unnamed',
           ownerId: container.ownerId ? bytesToHex(container.ownerId) : undefined,
           basicAcl: container.basicAcl,
         });
@@ -295,9 +304,10 @@ app.get('/api/containers', async (req, res) => {
         });
       }
     }
-    
+
     res.json({ success: true, data: containers });
   } catch (error: any) {
+    console.error('[GET /api/containers]', error);
     res.status(500).json({ error: error.message });
   }
 });
@@ -307,11 +317,20 @@ app.post('/api/containers/create', async (req, res) => {
     if (!state.client) {
       return res.status(400).json({ error: 'Not connected' });
     }
-    
+    if (!state.signer) {
+      return res.status(400).json({ error: 'No key loaded. Load or generate a key first.' });
+    }
+
     const { name } = req.body;
     const containerName = name || `container-${Date.now()}`;
-    
-    const containerId = await state.client.container().put({
+
+    const waiter = new Waiter(state.client, {
+      timeout: 120000,
+      pollInterval: 3000,
+      initialDelay: 2000,
+    });
+
+    const containerId = await waiter.containerPut({
       container: {
         version: { major: 2, minor: 18 },
         ownerId: ownerIdFromPublicKey(publicKeyBytes(state.signer!.public())),
@@ -328,7 +347,7 @@ app.post('/api/containers/create', async (req, res) => {
         },
       },
     });
-    
+
     res.json({
       success: true,
       data: {
@@ -336,6 +355,7 @@ app.post('/api/containers/create', async (req, res) => {
       },
     });
   } catch (error: any) {
+    console.error('[POST /api/containers/create]', error);
     res.status(500).json({ error: error.message });
   }
 });

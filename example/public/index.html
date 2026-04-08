@@ -808,7 +808,7 @@
       <div class="status-bar" id="statusBar">
         <span class="status-item status-disconnected" id="connectionStatus">Disconnected</span>
         <span class="status-item status-no-key" id="keyStatus">No Key</span>
-        <span class="status-item" id="endpointStatus" style="background: var(--bg-tertiary); border: 1px solid var(--border);">Endpoint: grpc://st1.t5.fs.neo.org:8080</span>
+        <span class="status-item" id="endpointStatus" style="background: var(--bg-tertiary); border: 1px solid var(--border);">Endpoint: grpcs://st1.t5.fs.neo.org:8082</span>
       </div>
     </header>
 
@@ -838,7 +838,7 @@
         <h2>🔌 Connection</h2>
         <div class="form-group">
           <label>Endpoint</label>
-          <input type="text" id="endpointInput" placeholder="grpc://st1.t5.fs.neo.org:8080">
+          <input type="text" id="endpointInput" placeholder="grpcs://st1.t5.fs.neo.org:8082">
         </div>
         <div class="button-group">
           <button onclick="updateEndpoint()">Update Endpoint</button>
@@ -883,7 +883,7 @@
     let state = {
       connected: false,
       hasSigner: false,
-      endpoint: 'grpc://st1.t5.fs.neo.org:8080',
+      endpoint: 'grpcs://st1.t5.fs.neo.org:8082',
       // Container expansion and pagination state
       expandedContainers: new Set(),
       containerPages: {}, // { containerId: { page: 1, totalPages: 1, totalObjects: 0 } }

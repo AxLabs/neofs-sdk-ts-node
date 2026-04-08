@@ -15,7 +15,7 @@ export class ContainerServiceClient {
   put(request: PutRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<PutResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<PutRequest, PutResponse>(
-        'neo.fs.v2.container.ContainerService/Put',
+        '/neo.fs.v2.container.ContainerService/Put',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => PutResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -35,7 +35,7 @@ export class ContainerServiceClient {
   delete(request: DeleteRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<DeleteResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<DeleteRequest, DeleteResponse>(
-        'neo.fs.v2.container.ContainerService/Delete',
+        '/neo.fs.v2.container.ContainerService/Delete',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => DeleteResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -55,7 +55,7 @@ export class ContainerServiceClient {
   get(request: GetRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<GetResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<GetRequest, GetResponse>(
-        'neo.fs.v2.container.ContainerService/Get',
+        '/neo.fs.v2.container.ContainerService/Get',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => GetResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -75,7 +75,7 @@ export class ContainerServiceClient {
   list(request: ListRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<ListResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<ListRequest, ListResponse>(
-        'neo.fs.v2.container.ContainerService/List',
+        '/neo.fs.v2.container.ContainerService/List',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => ListResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -95,7 +95,7 @@ export class ContainerServiceClient {
   setExtendedACL(request: SetExtendedACLRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<SetExtendedACLResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<SetExtendedACLRequest, SetExtendedACLResponse>(
-        'neo.fs.v2.container.ContainerService/SetExtendedACL',
+        '/neo.fs.v2.container.ContainerService/SetExtendedACL',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => SetExtendedACLResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -115,7 +115,7 @@ export class ContainerServiceClient {
   getExtendedACL(request: GetExtendedACLRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<GetExtendedACLResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<GetExtendedACLRequest, GetExtendedACLResponse>(
-        'neo.fs.v2.container.ContainerService/GetExtendedACL',
+        '/neo.fs.v2.container.ContainerService/GetExtendedACL',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => GetExtendedACLResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -135,7 +135,7 @@ export class ContainerServiceClient {
   announceUsedSpace(request: AnnounceUsedSpaceRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<AnnounceUsedSpaceResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<AnnounceUsedSpaceRequest, AnnounceUsedSpaceResponse>(
-        'neo.fs.v2.container.ContainerService/AnnounceUsedSpace',
+        '/neo.fs.v2.container.ContainerService/AnnounceUsedSpace',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => AnnounceUsedSpaceResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -155,7 +155,7 @@ export class ContainerServiceClient {
   setAttribute(request: SetAttributeRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<SetAttributeResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<SetAttributeRequest, SetAttributeResponse>(
-        'neo.fs.v2.container.ContainerService/SetAttribute',
+        '/neo.fs.v2.container.ContainerService/SetAttribute',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => SetAttributeResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -175,7 +175,7 @@ export class ContainerServiceClient {
   removeAttribute(request: RemoveAttributeRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<RemoveAttributeResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<RemoveAttributeRequest, RemoveAttributeResponse>(
-        'neo.fs.v2.container.ContainerService/RemoveAttribute',
+        '/neo.fs.v2.container.ContainerService/RemoveAttribute',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => RemoveAttributeResponse.deserializeBinary(new Uint8Array(buf)),
         request,

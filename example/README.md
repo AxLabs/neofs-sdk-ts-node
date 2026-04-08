@@ -58,7 +58,7 @@ npx tsx src/index.ts
 
 ## Example Endpoints
 
-- Testnet: `grpc://st1.t5.fs.neo.org:8080`
+- Testnet: `grpcs://st1.t5.fs.neo.org:8082`
 - Mainnet: `grpc://st1.fs.neo.org:8080`
 
 ## Notes

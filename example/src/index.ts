@@ -7,6 +7,7 @@
 import * as readline from 'readline';
 import {
   NeoFSClient,
+  Waiter,
   type ClientConfig,
   type NetworkInfo,
   type Container,
@@ -15,7 +16,7 @@ import {
   type ObjectID,
   type Address,
   type ObjectGetResult,
-} from 'neofs-sdk-ts-node';
+} from '@axlabs/neofs-sdk-ts-node';
 import {
   ECDSASignerRFC6979,
   type Signer,
@@ -80,7 +81,7 @@ interface AppState {
 const state: AppState = {
   client: null,
   signer: null,
-  endpoint: 'grpc://st1.t5.fs.neo.org:8080',
+  endpoint: 'grpcs://st1.t5.fs.neo.org:8082',
   networkInfo: null,
   balance: null,
   containerIds: [],
@@ -239,7 +240,7 @@ async function connectionMenu() {
       break;
     }
     case '3': {
-      const endpoint = await question('Enter new endpoint (e.g., grpc://st1.t5.fs.neo.org:8080): ');
+      const endpoint = await question('Enter new endpoint (e.g., grpcs://st1.t5.fs.neo.org:8082): ');
       if (endpoint.trim()) {
         state.endpoint = endpoint.trim();
         log.info(`Endpoint set to: ${state.endpoint}`);
@@ -369,46 +370,48 @@ async function containerOperationsMenu() {
     case '2': {
       const name = await question('Container name (or press Enter for auto-generated): ');
       const containerName = name.trim() || `test-container-${Date.now()}`;
-      
+
       try {
         log.info(`Creating container "${containerName}"...`);
-        
-        // Generate owner ID from signer
-        const ownerId = ownerIdFromPublicKey(publicKeyBytes(state.signer!.public()));
-        
-        // Generate nonce
-        const nonce = crypto.randomBytes(16);
-        
-        // Create container object
-        const container: Container = {
-          version: { major: 2, minor: 18 },
-          ownerId,
-          nonce,
-          basicAcl: 0x1FBFBFFF, // PRIVATE
-          attributes: [
-            { key: 'Name', value: containerName },
-          ],
-          placementPolicy: {
-            replicas: [
-              { count: 2, selector: 'REP 2' },
-            ],
-            selectors: [],
-            filters: [],
-            containerBackupFactor: 0,
-          },
-        };
-        
-        const containerId = await state.client.container().put({
-          container,
+
+        // UUID v4 nonce (required for container)
+        const nonce = new Uint8Array(16);
+        crypto.randomFillSync(nonce);
+        nonce[6] = (nonce[6] & 0x0f) | 0x40;
+        nonce[8] = (nonce[8] & 0x3f) | 0x80;
+
+        const waiter = new Waiter(state.client!, {
+          timeout: 120000,
+          pollInterval: 3000,
+          initialDelay: 2000,
         });
-        
+
+        const containerId = await waiter.containerPut({
+          container: {
+            version: { major: 2, minor: 18 },
+            ownerId: ownerIdFromPublicKey(publicKeyBytes(state.signer!.public())),
+            nonce,
+            basicAcl: 0x1fbfbfff, // Public read-write
+            attributes: [
+              { key: 'Name', value: containerName },
+            ],
+            placementPolicy: {
+              replicas: [{ count: 1, selector: '' }],
+              selectors: [],
+              filters: [],
+              containerBackupFactor: 0,
+            },
+          },
+        });
+
         log.success('Container created!');
         log.info(`Container ID: ${bytesToHex(containerId.value).substring(0, 32)}...`);
-        
+
         // Refresh container list
         const containerIds = await state.client.container().list();
         state.containerIds = containerIds;
         const containerIdHex = bytesToHex(containerId.value);
+        const container = await state.client.container().get({ containerId });
         state.containers.set(containerIdHex, container);
       } catch (error) {
         log.error(`Failed to create container: ${error}`);

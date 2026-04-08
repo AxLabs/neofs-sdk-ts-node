@@ -289,14 +289,32 @@ export class ContainerClient {
   }
 
   /**
+   * Extract raw private key bytes from the signer.
+   * The core ECDSASignerRFC6979 stores an elliptic KeyPair; fromPrivateKeyBytes expects bytes.
+   */
+  private getPrivateKeyBytes(): Uint8Array {
+    const signerAny = this.config.signer as { privateKey?: { getPrivate?: (enc?: string) => string } };
+    const keyPair = signerAny?.privateKey;
+    if (!keyPair || typeof keyPair.getPrivate !== 'function') {
+      throw new Error(
+        'Container operations require a signer that exposes private key (e.g. ECDSASignerRFC6979.fromWIF or .generate)'
+      );
+    }
+    const hex = keyPair.getPrivate('hex') as string;
+    const padded = hex.padStart(64, '0').slice(-64);
+    const bytes = new Uint8Array(32);
+    for (let i = 0; i < 32; i++) {
+      bytes[i] = parseInt(padded.slice(i * 2, i * 2 + 2), 16);
+    }
+    return bytes;
+  }
+
+  /**
    * Calculate container signature using RFC6979.
    * The signature should be calculated over the entire marshalled container.
    */
   private calculateContainerSignature(containerProto: any): Uint8Array {
-    // Create RFC6979 signer for container signatures
-    const rfc6979Signer = ECDSASignerRFC6979.fromPrivateKeyBytes((this.config.signer as any).privateKey);
-    
-    // Sign the entire marshalled container proto message
+    const rfc6979Signer = ECDSASignerRFC6979.fromPrivateKeyBytes(this.getPrivateKeyBytes());
     const containerData = containerProto.serializeBinary();
     return rfc6979Signer.sign(containerData);
   }
@@ -738,7 +756,7 @@ export class ContainerClient {
       requestBody.ContainerId = containerIdProto;
 
       // Sign the container ID for deletion using RFC6979
-      const rfc6979Signer = ECDSASignerRFC6979.fromPrivateKeyBytes((this.config.signer as any).privateKey);
+      const rfc6979Signer = ECDSASignerRFC6979.fromPrivateKeyBytes(this.getPrivateKeyBytes());
       const containerIdSignature = rfc6979Signer.sign(params.containerId.value);
       
       const signatureRFC6979 = new NeoFsV2Refs.SignatureRFC6979();

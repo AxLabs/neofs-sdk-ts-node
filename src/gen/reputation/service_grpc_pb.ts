@@ -15,7 +15,7 @@ export class ReputationServiceClient {
   announceLocalTrust(request: AnnounceLocalTrustRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<AnnounceLocalTrustResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<AnnounceLocalTrustRequest, AnnounceLocalTrustResponse>(
-        'neo.fs.v2.reputation.ReputationService/AnnounceLocalTrust',
+        '/neo.fs.v2.reputation.ReputationService/AnnounceLocalTrust',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => AnnounceLocalTrustResponse.deserializeBinary(new Uint8Array(buf)),
         request,
@@ -35,7 +35,7 @@ export class ReputationServiceClient {
   announceIntermediateResult(request: AnnounceIntermediateResultRequest, metadata?: grpc.Metadata, options?: grpc.CallOptions): Promise<AnnounceIntermediateResultResponse> {
     return new Promise((resolve, reject) => {
       this.client.makeUnaryRequest<AnnounceIntermediateResultRequest, AnnounceIntermediateResultResponse>(
-        'neo.fs.v2.reputation.ReputationService/AnnounceIntermediateResult',
+        '/neo.fs.v2.reputation.ReputationService/AnnounceIntermediateResult',
         (arg) => Buffer.from(arg.serializeBinary()),
         (buf) => AnnounceIntermediateResultResponse.deserializeBinary(new Uint8Array(buf)),
         request,

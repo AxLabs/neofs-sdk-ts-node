@@ -14,7 +14,7 @@
     "deasync": "^0.1.31",
     "elliptic": "^6.6.1",
     "express": "^4.18.2",
-    "@axlabs/neofs-sdk-ts-core": "^0.1.0",
+    "@axlabs/neofs-sdk-ts-core": "^0.0.2",
     "@axlabs/neofs-sdk-ts-node": "file:.."
   },
   "devDependencies": {

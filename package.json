@@ -1,6 +1,6 @@
 {
   "name": "@axlabs/neofs-sdk-ts-node",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "TypeScript SDK for NeoFS - Node.js Edition",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -22,6 +22,7 @@
     "generate:clean": "rm -rf src/gen/* && mkdir -p src/gen",
     "generate:all": "sh scripts/ensure-protoc-gen-grpc-ts.sh && npm run generate:clean && npm run generate",
     "test": "jest --passWithNoTests",
+    "test:integration": "jest -c jest.integration.config.js --runInBand",
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
     "format": "prettier --write src/**/*.ts",

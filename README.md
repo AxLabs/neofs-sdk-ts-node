@@ -77,7 +77,7 @@ const signer = ECDSASigner.generate();
 const signer = ECDSASignerRFC6979.fromHex('your-private-key-hex');
 
 const client = new NeoFSClient({
-  endpoint: 'grpc.testnet.neofs.io:8082',
+  endpoint: 'grpcs://st1.t5.fs.neo.org:8082',
   signer,
   // Optional: TLS configuration
   // credentials: grpc.credentials.createSsl(),
@@ -148,6 +148,29 @@ await client.object().delete({
   address: { containerId, objectId },
 });
 ```
+
+#### Search vs SearchV2
+
+- **Prefer `searchV2()`** for new code (pagination via cursor/limit, optional attribute return).
+- **`search()` is deprecated** at the NeoFS protocol level (`ObjectService/Search`). It is kept for compatibility.
+
+## Integration tests (against NeoFS testnet)
+
+Integration tests are **opt-in** and run against a real NeoFS endpoint. They are skipped unless you provide config via env vars.
+
+```bash
+export NEOFS_ENDPOINT="grpcs://st1.t5.fs.neo.org:8082"
+export NEOFS_WIF="<your testnet account WIF>"
+
+# optional (defaults to 180000)
+export NEOFS_TIMEOUT_MS=180000
+
+npm run test:integration
+```
+
+Required env vars:
+- **`NEOFS_ENDPOINT`**: NeoFS gRPC endpoint (e.g. `grpcs://...` or `grpc://...`)
+- **`NEOFS_WIF`**: account WIF used to sign requests (do not commit this)
 
 ### Large File Streaming
 
