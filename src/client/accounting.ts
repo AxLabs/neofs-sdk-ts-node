@@ -239,7 +239,7 @@ export class AccountingClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 18;
+      version.Minor = 22;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;

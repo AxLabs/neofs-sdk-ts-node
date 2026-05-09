@@ -59,6 +59,25 @@ describe('ContainerClient', () => {
     expect(put).toHaveBeenCalled();
   });
 
+  it('put forwards placement policy initial rules (API v2.22+)', async () => {
+    const put = vi.fn().mockResolvedValue({
+      Body: { ContainerId: { Value: new Uint8Array([1]) } },
+    });
+    const cc = makeClient({ put });
+    const c = {
+      ...minimalContainer,
+      placementPolicy: {
+        ...minimalContainer.placementPolicy,
+        initial: { replicaLimits: [2], maxReplicas: 4, preferLocal: true },
+      },
+    };
+    await cc.put({ container: c as any });
+    const proto = put.mock.calls[0][0].Body.Container.PlacementPolicy;
+    expect(proto.Initial?.ReplicaLimits).toEqual([2]);
+    expect(proto.Initial?.MaxReplicas).toBe(4);
+    expect(proto.Initial?.PreferLocal).toBe(true);
+  });
+
   it('put throws on NeoFS error status', async () => {
     const cc = makeClient({
       put: vi.fn().mockResolvedValue({
@@ -94,6 +113,7 @@ describe('ContainerClient', () => {
                 },
               ],
               Filters: [{ Name: 'fn', Key: 'fk', Op: 1, Value: 'v', Filters: [] }],
+              Initial: { ReplicaLimits: [1, 0], MaxReplicas: 5, PreferLocal: false },
             },
           },
         },
@@ -108,6 +128,11 @@ describe('ContainerClient', () => {
     expect(c.placementPolicy.containerBackupFactor).toBe(3);
     expect(c.placementPolicy.selectors[0].name).toBe('n');
     expect(c.placementPolicy.filters[0].key).toBe('fk');
+    expect(c.placementPolicy.initial).toEqual({
+      replicaLimits: [1, 0],
+      maxReplicas: 5,
+      preferLocal: false,
+    });
   });
 
   it('list returns container ids or empty array when body absent', async () => {

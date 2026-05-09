@@ -63,7 +63,7 @@ describe('NeoFS integration (testnet)', () => {
     // Create container (wait until it is visible)
     containerId = await waiter.containerPut({
       container: {
-        version: { major: 2, minor: 18 },
+        version: { major: 2, minor: 22 },
         ownerId,
         nonce: randomNonce(),
         basicAcl: 0x1fbfbfff, // public read-write (testnet convenience)

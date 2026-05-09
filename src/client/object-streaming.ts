@@ -249,7 +249,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 18;
+    version.Minor = 22;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -354,7 +354,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 18;
+    version.Minor = 22;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -494,7 +494,7 @@ export class ObjectClient {
     init.ObjectId = objectIdProto;
     init.Signature = objectSignature;
     init.Header = headerProto;
-    init.CopiesNumber = params.copiesNumber || 0;
+    init.CopiesNumber = params.copiesNumber ?? 0; // Deprecated in neofs-api v2.22; kept for older nodes.
 
     const initBody = new PutRequest_Body();
     initBody.Init = init;
@@ -503,7 +503,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 18;
+    version.Minor = 22;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -650,7 +650,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 18;
+    version.Minor = 22;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -726,7 +726,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 18;
+    version.Minor = 22;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -776,7 +776,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 18;
+    version.Minor = 22;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -849,7 +849,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 18;
+    version.Minor = 22;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 

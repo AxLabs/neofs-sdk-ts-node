@@ -63,6 +63,15 @@ export interface PlacementFilter {
 }
 
 /**
+ * Initial placement rules (NeoFS API v2.22+). See netmap.PlacementPolicy.initial.
+ */
+export interface PlacementPolicyInitial {
+  replicaLimits: number[];
+  maxReplicas?: number;
+  preferLocal?: boolean;
+}
+
+/**
  * Placement policy structure
  */
 export interface PlacementPolicy {
@@ -70,6 +79,8 @@ export interface PlacementPolicy {
   containerBackupFactor: number;
   selectors: PlacementSelector[];
   filters: PlacementFilter[];
+  /** Optional initial placement policy (API v2.22+ netmap.PlacementPolicy.initial). */
+  initial?: PlacementPolicyInitial;
 }
 
 /**
@@ -401,6 +412,20 @@ export class ContainerClient {
       policyProto.Filters = filters;
 
       policyProto.ContainerBackupFactor = params.container.placementPolicy.containerBackupFactor;
+
+      const initial = params.container.placementPolicy.initial;
+      if (initial) {
+        const initialProto = new NeoFsV2Netmap.PlacementPolicy_Initial();
+        initialProto.ReplicaLimits = initial.replicaLimits;
+        if (initial.maxReplicas !== undefined) {
+          initialProto.MaxReplicas = initial.maxReplicas;
+        }
+        if (initial.preferLocal !== undefined) {
+          initialProto.PreferLocal = initial.preferLocal;
+        }
+        policyProto.Initial = initialProto;
+      }
+
       containerProto.PlacementPolicy = policyProto;
 
       // Calculate container signature (must be done after setting all fields)
@@ -425,7 +450,7 @@ export class ContainerClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const versionMeta = new NeoFsV2Refs.Version();
       versionMeta.Major = 2;
-      versionMeta.Minor = 18;
+      versionMeta.Minor = 22;
       metaHeader.Version = versionMeta;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -513,7 +538,7 @@ export class ContainerClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 18;
+      version.Minor = 22;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -626,6 +651,15 @@ export class ContainerClient {
             filters: [], // TODO: Handle nested filters
           });
         }
+
+        const initProto = policyProto.Initial;
+        if (initProto) {
+          policy.initial = {
+            replicaLimits: [...(initProto.ReplicaLimits || [])],
+            maxReplicas: initProto.MaxReplicas,
+            preferLocal: initProto.PreferLocal,
+          };
+        }
       }
 
       return {
@@ -669,7 +703,7 @@ export class ContainerClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 18;
+      version.Minor = 22;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -770,7 +804,7 @@ export class ContainerClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 18;
+      version.Minor = 22;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;

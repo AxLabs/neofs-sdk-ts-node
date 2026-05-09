@@ -653,6 +653,7 @@ export interface PlacementPolicy {
   Filters: Filter[];
   SubnetId?: NeoFsV2Refs.SubnetID;
   EcRules: PlacementPolicy_ECRule[];
+  Initial?: PlacementPolicy_Initial;
 }
 
 export class PlacementPolicyImpl implements PlacementPolicy {
@@ -662,6 +663,7 @@ export class PlacementPolicyImpl implements PlacementPolicy {
   Filters!: Filter[];
   SubnetId?: NeoFsV2Refs.SubnetID;
   EcRules!: PlacementPolicy_ECRule[];
+  Initial?: PlacementPolicy_Initial;
 
   constructor(data?: Partial<PlacementPolicy>) {
     this.Replicas = data?.Replicas ?? [];
@@ -670,6 +672,7 @@ export class PlacementPolicyImpl implements PlacementPolicy {
     this.Filters = data?.Filters ?? [];
     this.SubnetId = data?.SubnetId ?? undefined;
     this.EcRules = data?.EcRules ?? [];
+    this.Initial = data?.Initial ?? undefined;
   }
 
   serializeBinary(): Uint8Array {
@@ -692,6 +695,9 @@ export class PlacementPolicyImpl implements PlacementPolicy {
     }
     for (const item of this.EcRules) {
       writer.writeMessage(6, item);
+    }
+    if (this.Initial) {
+      writer.writeMessage(7, this.Initial);
     }
     return writer.getResultBuffer();
   }
@@ -751,6 +757,13 @@ export class PlacementPolicyImpl implements PlacementPolicy {
             reader.skipField(wireType);
           }
           break;
+        case 7: // Initial
+          if (wireType === 2) { // Length-delimited
+            message.Initial = reader.readMessage(PlacementPolicy_InitialImpl.deserializeBinary);
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
         default:
           // Skip unknown fields
           reader.skipField(wireType);
@@ -768,7 +781,8 @@ export class PlacementPolicyImpl implements PlacementPolicy {
       Selectors: this.Selectors,
       Filters: this.Filters,
       SubnetId: this.SubnetId,
-      EcRules: this.EcRules
+      EcRules: this.EcRules,
+      Initial: this.Initial
     };
   }
 
@@ -873,6 +887,103 @@ export class PlacementPolicy_ECRule extends PlacementPolicy_ECRuleImpl {}
 
 // Type for interface data only (excludes class methods from merged type)
 export type PlacementPolicy_ECRuleData = Omit<PlacementPolicy_ECRule, 'serializeBinary' | 'toObject' | 'constructor'>;
+
+export interface PlacementPolicy_Initial {
+  ReplicaLimits: number[];
+  MaxReplicas: number;
+  PreferLocal: boolean;
+}
+
+export class PlacementPolicy_InitialImpl implements PlacementPolicy_Initial {
+  ReplicaLimits!: number[];
+  MaxReplicas!: number;
+  PreferLocal!: boolean;
+
+  constructor(data?: Partial<PlacementPolicy_Initial>) {
+    this.ReplicaLimits = data?.ReplicaLimits ?? [];
+    this.MaxReplicas = data?.MaxReplicas ?? 0;
+    this.PreferLocal = data?.PreferLocal ?? false;
+  }
+
+  serializeBinary(): Uint8Array {
+    const writer = new BinaryWriter();
+
+    for (const item of this.ReplicaLimits) {
+      writer.writeUint32(1, item);
+    }
+    if (this.MaxReplicas !== 0) {
+      writer.writeUint32(2, this.MaxReplicas);
+    }
+    if (this.PreferLocal !== false) {
+      writer.writeBool(3, this.PreferLocal);
+    }
+    return writer.getResultBuffer();
+  }
+
+  static deserializeBinary(data: Uint8Array): PlacementPolicy_InitialImpl {
+    const reader = new BinaryReader(data);
+    const message = new PlacementPolicy_InitialImpl();
+
+    // Parse protobuf wire format
+    while (reader.position < reader.buffer.length) {
+      const tag = reader.readVarint();
+      const fieldNumber = tag >>> 3;
+      const wireType = tag & 7;
+
+      switch (fieldNumber) {
+        case 1: // ReplicaLimits
+          if (wireType === 2) { // Length-delimited (packed)
+            const length = reader.readVarint();
+            const endPos = reader.position + length;
+            while (reader.position < endPos) {
+              message.ReplicaLimits.push(reader.readUint32());
+            }
+          } else {
+            // Non-packed encoding - single item
+            if (wireType === 0) { message.ReplicaLimits.push(reader.readUint32()); }
+          }
+          break;
+        case 2: // MaxReplicas
+          if (wireType === 0) { // Varint
+            message.MaxReplicas = reader.readUint32();
+          } else if (wireType === 5) { // 32-bit
+            message.MaxReplicas = reader.readUint32Fixed();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        case 3: // PreferLocal
+          if (wireType === 0) { // Varint
+            message.PreferLocal = reader.readBool();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        default:
+          // Skip unknown fields
+          reader.skipField(wireType);
+          break;
+      }
+    }
+
+    return message;
+  }
+
+  toObject(): PlacementPolicy_InitialData {
+    return {
+      ReplicaLimits: this.ReplicaLimits,
+      MaxReplicas: this.MaxReplicas,
+      PreferLocal: this.PreferLocal
+    };
+  }
+
+}
+
+// Export class alias without Impl suffix for Node.js compatibility
+export class PlacementPolicy_Initial extends PlacementPolicy_InitialImpl {}
+
+// Type for interface data only (excludes class methods from merged type)
+export type PlacementPolicy_InitialData = Omit<PlacementPolicy_Initial, 'serializeBinary' | 'toObject' | 'constructor'>;
 
 export interface NodeInfo {
   PublicKey: Uint8Array;

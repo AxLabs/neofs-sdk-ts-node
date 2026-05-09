@@ -44,11 +44,11 @@ describe('EACL', () => {
       .allow(Operation.GET, [Target.others()], [
         Filter.payloadSize(Match.NUM_LT, 1024n),
       ])
-      .setVersion(2, 18);
+      .setVersion(2, 22);
     const bytes = t.serialize();
     const back = Table.deserialize(bytes);
     expect(back.containerId).toEqual(cid);
-    expect(back.version).toEqual({ major: 2, minor: 18 });
+    expect(back.version).toEqual({ major: 2, minor: 22 });
     expect(back.records.length).toBe(t.records.length);
     expect(back.records[0].filters[0].key).toBe(ObjectFilters.PAYLOAD_SIZE);
   });
