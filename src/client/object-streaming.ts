@@ -6,7 +6,7 @@ import { Signer, publicKeyBytes } from '@axlabs/neofs-sdk-ts-core/crypto';
 import { NeoFsV2Refs } from '../gen/refs/types_pb';
 import { NeoFsV2Session } from '../gen/session/types_pb';
 import { NeoFsV2Object } from '../gen/object/types_pb';
-import { PutRequest, PutRequest_Body, PutResponse, GetRequest, GetRequest_Body, HeadRequest, HeadRequest_Body, DeleteRequest, DeleteRequest_Body, SearchRequest, SearchRequest_Body, SearchV2Request, SearchV2Request_Body, GetResponse, GetResponse_Body, HeadResponse, HeadResponse_Body, DeleteResponse, DeleteResponse_Body, SearchResponse, SearchResponse_Body, SearchV2Response, SearchV2Response_Body, SearchV2Response_OIDWithMeta, PutRequest_Body_Init } from '../gen/object/service_pb';
+import { PutRequest, PutRequest_Body, PutResponse, GetRequest, GetRequest_Body, HeadRequest, HeadRequest_Body, DeleteRequest, DeleteRequest_Body, SearchRequest, SearchRequest_Body, SearchV2Request, SearchV2Request_Body, GetResponse, GetResponse_Body, HeadResponse, HeadResponse_Body, DeleteResponse, DeleteResponse_Body, SearchResponse, SearchResponse_Body, SearchV2Response, SearchV2Response_Body, SearchV2Response_OIDWithMeta, PutRequest_Body_Init, GetRangeRequest, GetRangeRequest_Body, GetRangeResponse, Range } from '../gen/object/service_pb';
 import { ObjectServiceClient } from '../gen/object/service_grpc_pb';
 import * as grpc from '@grpc/grpc-js';
 import * as crypto from 'crypto';
@@ -275,19 +275,24 @@ export class ObjectClient {
       call.on('data', (response: any) => {
         const responseBody = response.Body;
         if (!responseBody) return;
-        
-        // Check which part of the response we have
+
+        if (responseBody.SplitInfo) {
+          reject(new Error('SplitInfo not supported yet'));
+          return;
+        }
+
+        // Init and Chunk can appear in the same GetResponse_Body (protobuf fields 1 and 2).
+        // Using if / else-if would drop the first payload chunk when coalesced with Init.
         if (responseBody.Init) {
           const init = responseBody.Init;
           objectId = { value: new Uint8Array(init.ObjectId?.Value || []) };
           objectSignature = init.Signature;
           objectHeader = init.Header;
-        } else if (responseBody.Chunk) {
-          const chunk = new Uint8Array(responseBody.Chunk);
-          payloadChunks.push(chunk);
-        } else if (responseBody.SplitInfo) {
-          reject(new Error('SplitInfo not supported yet'));
-          return;
+        }
+
+        const rawChunk = responseBody.Chunk;
+        if (rawChunk && rawChunk.length > 0) {
+          payloadChunks.push(new Uint8Array(rawChunk));
         }
       });
 
@@ -311,12 +316,95 @@ export class ObjectClient {
           offset += chunk.length;
         }
 
+        // Payload may be shorter than header until caller uses GetRange workaround (known NeoFS gateway bug).
         resolve({
           objectId,
           header: objectHeader,
           signature: objectSignature,
           payload
         });
+      });
+    });
+  }
+
+  /**
+   * Read a byte range of an object payload (ObjectService/GetRange).
+   */
+  async getRange(params: {
+    address: Address;
+    range: { offset: bigint; length: bigint };
+    raw?: boolean;
+  }): Promise<Uint8Array> {
+    const body = new GetRangeRequest_Body();
+    const addressProto = new NeoFsV2Refs.Address();
+    const containerIdProto = new NeoFsV2Refs.ContainerID();
+    containerIdProto.Value = params.address.containerId.value;
+    addressProto.ContainerId = containerIdProto;
+    const objectIdProto = new NeoFsV2Refs.ObjectID();
+    objectIdProto.Value = params.address.objectId.value;
+    addressProto.ObjectId = objectIdProto;
+    body.Address = addressProto;
+
+    const rangeProto = new Range();
+    rangeProto.Offset = params.range.offset;
+    rangeProto.Length = params.range.length;
+    body.Range = rangeProto;
+    body.Raw = params.raw ?? false;
+
+    const metaHeader = new NeoFsV2Session.RequestMetaHeader();
+    const version = new NeoFsV2Refs.Version();
+    version.Major = 2;
+    version.Minor = 18;
+    metaHeader.Version = version;
+    metaHeader.Ttl = 2;
+
+    const verifyHeader = this.createVerificationHeader(body.serializeBinary(), metaHeader);
+
+    const request = new GetRangeRequest();
+    request.Body = body;
+    request.MetaHeader = metaHeader;
+    request.VerifyHeader = verifyHeader;
+
+    const expectedLen = params.range.length;
+
+    return new Promise((resolve, reject) => {
+      const call = this.client.getRange(request);
+      const chunks: Uint8Array[] = [];
+
+      call.on('data', (response: GetRangeResponse) => {
+        const responseBody = response.Body;
+        if (!responseBody) return;
+        if (responseBody.SplitInfo) {
+          reject(new Error('SplitInfo not supported yet'));
+          return;
+        }
+        const rawChunk = responseBody.Chunk;
+        if (rawChunk && rawChunk.length > 0) {
+          chunks.push(new Uint8Array(rawChunk));
+        }
+      });
+
+      call.on('error', (error: any) => {
+        reject(new Error(`Failed to get object range: ${error.message}`));
+      });
+
+      call.on('end', () => {
+        const totalLength = chunks.reduce((sum, c) => sum + c.length, 0);
+        const out = new Uint8Array(totalLength);
+        let offset = 0;
+        for (const c of chunks) {
+          out.set(c, offset);
+          offset += c.length;
+        }
+        if (expectedLen > 0n && BigInt(out.length) !== expectedLen) {
+          reject(
+            new Error(
+              `GetRange size mismatch: expected ${expectedLen} bytes, assembled ${out.length}`,
+            ),
+          );
+          return;
+        }
+        resolve(out);
       });
     });
   }

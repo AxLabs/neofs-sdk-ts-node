@@ -26,7 +26,7 @@ const signer = ECDSASigner.fromHex(privateKeyHex);
 
 // Initialize the client
 const client = new NeoFSClient({
-  endpoint: 'grpc.testnet.neofs.io:8082',
+  endpoint: 'st1.t5.fs.neo.org:8082',
   signer,
 });
 

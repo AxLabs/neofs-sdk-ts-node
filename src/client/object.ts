@@ -86,6 +86,12 @@ export interface ObjectSearchV2Result {
   cursor: string;
 }
 
+export interface ObjectGetRangeParams {
+  address: Address;
+  range: { offset: bigint; length: bigint };
+  raw?: boolean;
+}
+
 export class ObjectClient {
   private streamingClient: StreamingObjectClient;
 
@@ -100,6 +106,10 @@ export class ObjectClient {
 
   async get(params: ObjectGetParams): Promise<ObjectGetResult> {
     return this.streamingClient.get(params);
+  }
+
+  async getRange(params: ObjectGetRangeParams): Promise<Uint8Array> {
+    return this.streamingClient.getRange(params);
   }
 
   async head(params: ObjectHeadParams): Promise<ObjectHeader> {
