@@ -21,7 +21,6 @@ import {
   ECDSASignerRFC6979,
   type Signer,
   publicKeyBytes,
-  tzHash,
 } from '@axlabs/neofs-sdk-ts-core/crypto';
 import { ownerIdFromPublicKey } from '@axlabs/neofs-sdk-ts-core/user';
 import { Decimal } from '@axlabs/neofs-sdk-ts-core/types';
@@ -332,7 +331,7 @@ app.post('/api/containers/create', async (req, res) => {
 
     const containerId = await waiter.containerPut({
       container: {
-        version: { major: 2, minor: 18 },
+        version: { major: 2, minor: 26 },
         ownerId: ownerIdFromPublicKey(publicKeyBytes(state.signer!.public())),
         nonce: generateNonce(),
         basicAcl: 0x1fbfbfff, // Public read-write
@@ -425,10 +424,12 @@ app.get('/api/objects', async (req, res) => {
     
     console.log('Searching objects in container:', bytesToHex(state.selectedContainerId.value));
     
-    const objectIds = await state.client.object().search({
+    const searchResult = await state.client.object().searchV2({
       containerId: state.selectedContainerId,
       filters: [],
+      limit: 1000,
     });
+    const objectIds = searchResult.result.map(result => result.id);
     
     const totalCount = objectIds.length;
     console.log('Found', totalCount, 'objects, showing page', page, 'with limit', limit);
@@ -534,9 +535,6 @@ app.post('/api/objects/put', async (req, res) => {
     // Calculate payload hash (SHA256)
     const payloadHash = crypto.createHash('sha256').update(payload).digest();
     
-    // Calculate homomorphic hash (Tillich-Zémor)
-    const homomorphicHash = tzHash(payload);
-    
     console.log('Creating object with header:', {
       containerId: bytesToHex(state.selectedContainerId.value),
       payloadLength: payload.length,
@@ -552,16 +550,12 @@ app.post('/api/objects/put', async (req, res) => {
         type: 2, // SHA256 (ChecksumType_SHA256 = 2)
         sum: payloadHash,
       },
-      homomorphicHash: {
-        type: 1, // TillichZemor (ChecksumType_TZ = 1)
-        sum: homomorphicHash,
-      },
       attributes: [
         ...(filename ? [{ key: 'FileName', value: filename }] : []),
         { key: 'ContentType', value: 'application/octet-stream' },
         { key: 'Application', value: 'NeoFS-Web-UI' },
       ],
-      version: { major: 2, minor: 0 },
+      version: { major: 2, minor: 26 },
     };
     
     const objectId = await state.client.object().put({

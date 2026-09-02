@@ -88,7 +88,7 @@ describe('streaming ObjectClient get()', () => {
     const call = new FakeReadableCall();
     grpcClient.get.mockReturnValue(call);
 
-    const header = { payloadLength: 4n };
+    const header = { PayloadLength: 4n };
     const signature = { Sign: new Uint8Array([7]) };
     const promise = client.get({ address: createAddress() });
 
@@ -107,7 +107,7 @@ describe('streaming ObjectClient get()', () => {
 
     await expect(promise).resolves.toEqual({
       objectId: { value: new Uint8Array([1, 2, 3]) },
-      header,
+      header: expect.objectContaining({ payloadLength: 4 }),
       signature,
       payload: new Uint8Array([65, 66, 67, 68]),
     });
@@ -156,7 +156,7 @@ describe('streaming ObjectClient getRange()', () => {
   it('builds request and returns concatenated range payload', async () => {
     const { client, grpcClient } = createClient();
     const call = new FakeReadableCall();
-    grpcClient.getRange.mockReturnValue(call);
+    grpcClient.get.mockReturnValue(call);
 
     const address = createAddress();
     const promise = client.getRange({
@@ -164,10 +164,11 @@ describe('streaming ObjectClient getRange()', () => {
       range: { offset: 5n, length: 4n },
     });
 
-    const request = grpcClient.getRange.mock.calls[0][0];
+    const request = grpcClient.get.mock.calls[0][0];
     expect(request.Body.Range.Offset).toBe(5n);
     expect(request.Body.Range.Length).toBe(4n);
     expect(request.Body.Raw).toBe(false);
+    expect(request.Body.PayloadOnly).toBe(true);
     expect(request.Body.Address.ContainerId.Value).toEqual(address.containerId.value);
     expect(request.Body.Address.ObjectId.Value).toEqual(address.objectId.value);
 
@@ -181,7 +182,7 @@ describe('streaming ObjectClient getRange()', () => {
   it('passes through explicit raw=true in getRange()', async () => {
     const { client, grpcClient } = createClient();
     const call = new FakeReadableCall();
-    grpcClient.getRange.mockReturnValue(call);
+    grpcClient.get.mockReturnValue(call);
 
     const promise = client.getRange({
       address: createAddress(),
@@ -189,7 +190,7 @@ describe('streaming ObjectClient getRange()', () => {
       raw: true,
     });
 
-    const request = grpcClient.getRange.mock.calls[0][0];
+    const request = grpcClient.get.mock.calls[0][0];
     expect(request.Body.Raw).toBe(true);
 
     call.emit('data', { Body: { Chunk: new Uint8Array([255]) } });
@@ -201,7 +202,7 @@ describe('streaming ObjectClient getRange()', () => {
   it('rejects getRange() when assembled length differs from requested length', async () => {
     const { client, grpcClient } = createClient();
     const call = new FakeReadableCall();
-    grpcClient.getRange.mockReturnValue(call);
+    grpcClient.get.mockReturnValue(call);
 
     const promise = client.getRange({
       address: createAddress(),
@@ -212,14 +213,14 @@ describe('streaming ObjectClient getRange()', () => {
     call.emit('end');
 
     await expect(promise).rejects.toThrow(
-      'GetRange size mismatch: expected 5 bytes, assembled 4',
+      'Get range size mismatch: expected 5 bytes, assembled 4',
     );
   });
 
   it('rejects getRange() when stream reports SplitInfo', async () => {
     const { client, grpcClient } = createClient();
     const call = new FakeReadableCall();
-    grpcClient.getRange.mockReturnValue(call);
+    grpcClient.get.mockReturnValue(call);
 
     const promise = client.getRange({
       address: createAddress(),
@@ -233,7 +234,7 @@ describe('streaming ObjectClient getRange()', () => {
   it('wraps gRPC errors in getRange()', async () => {
     const { client, grpcClient } = createClient();
     const call = new FakeReadableCall();
-    grpcClient.getRange.mockReturnValue(call);
+    grpcClient.get.mockReturnValue(call);
 
     const promise = client.getRange({
       address: createAddress(),
@@ -256,7 +257,10 @@ describe('streaming ObjectClient head()', () => {
     grpcClient.head.mockResolvedValue({
       Body: { Header: { Header: inner } },
     });
-    await expect(client.head({ address: createAddress() })).resolves.toBe(inner);
+    await expect(client.head({ address: createAddress() })).resolves.toMatchObject({
+      containerId: { value: new Uint8Array([1]) },
+      ownerId: new Uint8Array([2]),
+    });
   });
 
   it('maps ShortHeader to ObjectHeader shape', async () => {

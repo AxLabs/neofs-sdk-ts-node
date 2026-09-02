@@ -41,16 +41,20 @@ describe('EACL', () => {
 
   it('serialize / deserialize roundtrip', () => {
     const t = new Table(cid)
-      .allow(Operation.GET, [Target.others()], [
-        Filter.payloadSize(Match.NUM_LT, 1024n),
-      ])
-      .setVersion(2, 22);
+      .addRecord(
+        Record.allowGet(
+          [Target.others()],
+          [Filter.payloadSize(Match.NUM_LT, 1024n)],
+        ).setComment('public reads'),
+      )
+      .setVersion(2, 26);
     const bytes = t.serialize();
     const back = Table.deserialize(bytes);
     expect(back.containerId).toEqual(cid);
-    expect(back.version).toEqual({ major: 2, minor: 22 });
+    expect(back.version).toEqual({ major: 2, minor: 26 });
     expect(back.records.length).toBe(t.records.length);
     expect(back.records[0].filters[0].key).toBe(ObjectFilters.PAYLOAD_SIZE);
+    expect(back.records[0].comment).toBe('public reads');
   });
 
   it('clone is independent', () => {

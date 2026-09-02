@@ -359,6 +359,7 @@ export interface EACLRecord {
   Action: Action;
   Filters: EACLRecord_Filter[];
   Targets: EACLRecord_Target[];
+  Comment: string;
 }
 
 export class EACLRecordImpl implements EACLRecord {
@@ -366,12 +367,14 @@ export class EACLRecordImpl implements EACLRecord {
   Action!: Action;
   Filters!: EACLRecord_Filter[];
   Targets!: EACLRecord_Target[];
+  Comment!: string;
 
   constructor(data?: Partial<EACLRecord>) {
     this.Operation = data?.Operation ?? 0;
     this.Action = data?.Action ?? 0;
     this.Filters = data?.Filters ?? [];
     this.Targets = data?.Targets ?? [];
+    this.Comment = data?.Comment ?? "";
   }
 
   serializeBinary(): Uint8Array {
@@ -388,6 +391,9 @@ export class EACLRecordImpl implements EACLRecord {
     }
     for (const item of this.Targets) {
       writer.writeMessage(4, item);
+    }
+    if (this.Comment !== "") {
+      writer.writeString(5, this.Comment);
     }
     return writer.getResultBuffer();
   }
@@ -431,6 +437,13 @@ export class EACLRecordImpl implements EACLRecord {
             reader.skipField(wireType);
           }
           break;
+        case 5: // Comment
+          if (wireType === 2) { // Length-delimited
+            message.Comment = reader.readString();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
         default:
           // Skip unknown fields
           reader.skipField(wireType);
@@ -446,7 +459,8 @@ export class EACLRecordImpl implements EACLRecord {
       Operation: this.Operation,
       Action: this.Action,
       Filters: this.Filters,
-      Targets: this.Targets
+      Targets: this.Targets,
+      Comment: this.Comment
     };
   }
 

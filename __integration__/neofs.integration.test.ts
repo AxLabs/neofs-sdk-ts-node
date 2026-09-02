@@ -11,8 +11,11 @@ function requireEnv(name: string): string {
   return v;
 }
 
-function randomNonce(bytes = 32): Uint8Array {
-  return new Uint8Array(crypto.randomBytes(bytes));
+function randomNonce(): Uint8Array {
+  const nonce = new Uint8Array(crypto.randomBytes(16));
+  nonce[6] = (nonce[6] & 0x0f) | 0x40;
+  nonce[8] = (nonce[8] & 0x3f) | 0x80;
+  return nonce;
 }
 
 function hex(u8: Uint8Array): string {
@@ -59,11 +62,11 @@ describe('NeoFS integration (testnet)', () => {
   let containerId: ContainerID;
   const createdObjectIds: ObjectID[] = [];
 
-  itIf('creates container, puts objects, search + searchV2 + get/head/delete work', async () => {
+  itIf('creates container, puts objects, searchV2 + get/head/delete work', async () => {
     // Create container (wait until it is visible)
     containerId = await waiter.containerPut({
       container: {
-        version: { major: 2, minor: 22 },
+        version: { major: 2, minor: 26 },
         ownerId,
         nonce: randomNonce(),
         basicAcl: 0x1fbfbfff, // public read-write (testnet convenience)
@@ -90,7 +93,7 @@ describe('NeoFS integration (testnet)', () => {
           { key: 'it_suite', value: 'neofs-sdk-ts-node' },
           { key: 'it_tag', value: 'A' },
         ],
-        version: { major: 2, minor: 0 },
+        version: { major: 2, minor: 26 },
       },
       payload: payloadA,
     });
@@ -105,22 +108,13 @@ describe('NeoFS integration (testnet)', () => {
           { key: 'it_suite', value: 'neofs-sdk-ts-node' },
           { key: 'it_tag', value: 'B' },
         ],
-        version: { major: 2, minor: 0 },
+        version: { major: 2, minor: 26 },
       },
       payload: payloadB,
     });
     createdObjectIds.push(objectIdB);
 
-    // Search (legacy streaming)
-    const ids = await client.object().search({
-      containerId,
-      filters: [{ key: 'it_suite', value: 'neofs-sdk-ts-node', matchType: 1 }],
-    });
-    const idHexes = new Set(ids.map((x) => hex(x.value)));
-    expect(idHexes.has(hex(objectIdA.value))).toBe(true);
-    expect(idHexes.has(hex(objectIdB.value))).toBe(true);
-
-    // SearchV2 (preferred)
+    // SearchV2
     const resV2 = await client.object().searchV2({
       containerId,
       filters: [{ key: 'it_suite', value: 'neofs-sdk-ts-node', matchType: 1 }],
@@ -144,6 +138,7 @@ describe('NeoFS integration (testnet)', () => {
     for (const oid of createdObjectIds) {
       await client.object().delete({ address: { containerId, objectId: oid } });
     }
+    await client.container().delete({ containerId });
   });
 
   it('configuration is provided via env vars', async () => {

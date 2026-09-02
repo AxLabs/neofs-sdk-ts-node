@@ -406,15 +406,24 @@ export type GetRequestData = Omit<GetRequest, 'serializeBinary' | 'toObject' | '
 export interface GetRequest_Body {
   Address?: NeoFsV2Refs.Address;
   Raw: boolean;
+  Range?: Range;
+  PayloadOnly: boolean;
+  ExtendedRange?: ExtendedRange;
 }
 
 export class GetRequest_BodyImpl implements GetRequest_Body {
   Address?: NeoFsV2Refs.Address;
   Raw!: boolean;
+  Range?: Range;
+  PayloadOnly!: boolean;
+  ExtendedRange?: ExtendedRange;
 
   constructor(data?: Partial<GetRequest_Body>) {
     this.Address = data?.Address ?? undefined;
     this.Raw = data?.Raw ?? false;
+    this.Range = data?.Range ?? undefined;
+    this.PayloadOnly = data?.PayloadOnly ?? false;
+    this.ExtendedRange = data?.ExtendedRange ?? undefined;
   }
 
   serializeBinary(): Uint8Array {
@@ -425,6 +434,15 @@ export class GetRequest_BodyImpl implements GetRequest_Body {
     }
     if (this.Raw !== false) {
       writer.writeBool(2, this.Raw);
+    }
+    if (this.Range) {
+      writer.writeMessage(3, this.Range);
+    }
+    if (this.PayloadOnly !== false) {
+      writer.writeBool(4, this.PayloadOnly);
+    }
+    if (this.ExtendedRange) {
+      writer.writeMessage(5, this.ExtendedRange);
     }
     return writer.getResultBuffer();
   }
@@ -454,6 +472,27 @@ export class GetRequest_BodyImpl implements GetRequest_Body {
             reader.skipField(wireType);
           }
           break;
+        case 3: // Range
+          if (wireType === 2) { // Length-delimited
+            message.Range = reader.readMessage(RangeImpl.deserializeBinary);
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        case 4: // PayloadOnly
+          if (wireType === 0) { // Varint
+            message.PayloadOnly = reader.readBool();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        case 5: // ExtendedRange
+          if (wireType === 2) { // Length-delimited
+            message.ExtendedRange = reader.readMessage(ExtendedRangeImpl.deserializeBinary);
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
         default:
           // Skip unknown fields
           reader.skipField(wireType);
@@ -467,7 +506,10 @@ export class GetRequest_BodyImpl implements GetRequest_Body {
   toObject(): GetRequest_BodyData {
     return {
       Address: this.Address,
-      Raw: this.Raw
+      Raw: this.Raw,
+      Range: this.Range,
+      PayloadOnly: this.PayloadOnly,
+      ExtendedRange: this.ExtendedRange
     };
   }
 
@@ -2795,6 +2837,86 @@ export class Range extends RangeImpl {}
 // Type for interface data only (excludes class methods from merged type)
 export type RangeData = Omit<Range, 'serializeBinary' | 'toObject' | 'constructor'>;
 
+export interface ExtendedRange {
+  FirstPos: bigint;
+  LastPos: bigint;
+}
+
+export class ExtendedRangeImpl implements ExtendedRange {
+  FirstPos!: bigint;
+  LastPos!: bigint;
+
+  constructor(data?: Partial<ExtendedRange>) {
+    this.FirstPos = data?.FirstPos ?? 0n;
+    this.LastPos = data?.LastPos ?? 0n;
+  }
+
+  serializeBinary(): Uint8Array {
+    const writer = new BinaryWriter();
+
+    if (this.FirstPos !== 0n) {
+      writer.writeUint64(1, this.FirstPos);
+    }
+    if (this.LastPos !== 0n) {
+      writer.writeUint64(2, this.LastPos);
+    }
+    return writer.getResultBuffer();
+  }
+
+  static deserializeBinary(data: Uint8Array): ExtendedRangeImpl {
+    const reader = new BinaryReader(data);
+    const message = new ExtendedRangeImpl();
+
+    // Parse protobuf wire format
+    while (reader.position < reader.buffer.length) {
+      const tag = reader.readVarint();
+      const fieldNumber = tag >>> 3;
+      const wireType = tag & 7;
+
+      switch (fieldNumber) {
+        case 1: // FirstPos
+          if (wireType === 0) { // Varint
+            message.FirstPos = reader.readUint64();
+          } else if (wireType === 1) { // 64-bit
+            message.FirstPos = reader.readUint64Fixed();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        case 2: // LastPos
+          if (wireType === 0) { // Varint
+            message.LastPos = reader.readUint64();
+          } else if (wireType === 1) { // 64-bit
+            message.LastPos = reader.readUint64Fixed();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        default:
+          // Skip unknown fields
+          reader.skipField(wireType);
+          break;
+      }
+    }
+
+    return message;
+  }
+
+  toObject(): ExtendedRangeData {
+    return {
+      FirstPos: this.FirstPos,
+      LastPos: this.LastPos
+    };
+  }
+
+}
+
+// Export class alias without Impl suffix for Node.js compatibility
+export class ExtendedRange extends ExtendedRangeImpl {}
+
+// Type for interface data only (excludes class methods from merged type)
+export type ExtendedRangeData = Omit<ExtendedRange, 'serializeBinary' | 'toObject' | 'constructor'>;
+
 export interface GetRangeRequest {
   Body?: GetRangeRequest_Body;
   MetaHeader?: NeoFsV2Session.RequestMetaHeader;
@@ -3235,14 +3357,14 @@ export interface GetRangeHashRequest_Body {
   Address?: NeoFsV2Refs.Address;
   Ranges: Range[];
   Salt: Uint8Array;
-  Type: ChecksumType;
+  Type: NeoFsV2Refs.ChecksumType;
 }
 
 export class GetRangeHashRequest_BodyImpl implements GetRangeHashRequest_Body {
   Address?: NeoFsV2Refs.Address;
   Ranges!: Range[];
   Salt!: Uint8Array;
-  Type!: ChecksumType;
+  Type!: NeoFsV2Refs.ChecksumType;
 
   constructor(data?: Partial<GetRangeHashRequest_Body>) {
     this.Address = data?.Address ?? undefined;
@@ -3426,12 +3548,12 @@ export class GetRangeHashResponse extends GetRangeHashResponseImpl {}
 export type GetRangeHashResponseData = Omit<GetRangeHashResponse, 'serializeBinary' | 'toObject' | 'constructor'>;
 
 export interface GetRangeHashResponse_Body {
-  Type: ChecksumType;
+  Type: NeoFsV2Refs.ChecksumType;
   HashList: Uint8Array[];
 }
 
 export class GetRangeHashResponse_BodyImpl implements GetRangeHashResponse_Body {
-  Type!: ChecksumType;
+  Type!: NeoFsV2Refs.ChecksumType;
   HashList!: Uint8Array[];
 
   constructor(data?: Partial<GetRangeHashResponse_Body>) {

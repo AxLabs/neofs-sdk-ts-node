@@ -1,5 +1,5 @@
 import { ClientConfig } from './client';
-import { Signer, NeoFSSignature, publicKeyBytes } from '@axlabs/neofs-sdk-ts-core/crypto';
+import { signRequest } from './request-signing';
 
 // Import proto definitions - using our generated classes
 import { NetmapServiceClient } from '../gen/netmap/service_grpc_pb';
@@ -129,49 +129,12 @@ export class NetmapClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 22;
+      version.Minor = 26;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
 
-      // Create proper protobuf verification header
-      const verifyHeader = new NeoFsV2Session.RequestVerificationHeader();
-
-      // Generate proper signatures for the request
-      // Sign the request body
-      const bodyData = request.Body!.serializeBinary();
-      const bodySignature = this.config.signer.sign(bodyData);
-
-      // Sign the meta header
-      const metaData = request.MetaHeader!.serializeBinary();
-      const metaSignature = this.config.signer.sign(metaData);
-
-      // Sign the verification header (origin signature)
-      const originData = verifyHeader.serializeBinary();
-      const originSignature = this.config.signer.sign(originData);
-
-      // Create body signature
-      const bodySig = new NeoFsV2Refs.Signature();
-      bodySig.Key = publicKeyBytes(this.config.signer.public());
-      bodySig.Sign = bodySignature;
-      bodySig.Scheme = this.config.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      verifyHeader.BodySignature = bodySig;
-
-      // Create meta signature
-      const metaSig = new NeoFsV2Refs.Signature();
-      metaSig.Key = publicKeyBytes(this.config.signer.public());
-      metaSig.Sign = metaSignature;
-      metaSig.Scheme = this.config.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      verifyHeader.MetaSignature = metaSig;
-
-      // Create origin signature
-      const originSig = new NeoFsV2Refs.Signature();
-      originSig.Key = publicKeyBytes(this.config.signer.public());
-      originSig.Sign = originSignature;
-      originSig.Scheme = this.config.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      verifyHeader.OriginSignature = originSig;
-
-      request.VerifyHeader = verifyHeader;
+      signRequest(request, this.config.signer);
 
       // Make the gRPC call using our generated service client
       const response = await this.client.localNodeInfo(request);
@@ -242,44 +205,12 @@ export class NetmapClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 22;
+      version.Minor = 26;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
 
-      // Create proper protobuf verification header
-      const verifyHeader = new NeoFsV2Session.RequestVerificationHeader();
-
-      // Generate proper signatures for the request
-      const bodyData = request.Body!.serializeBinary();
-      const bodySignature = this.config.signer.sign(bodyData);
-
-      const metaData = request.MetaHeader!.serializeBinary();
-      const metaSignature = this.config.signer.sign(metaData);
-
-      const originData = verifyHeader.serializeBinary();
-      const originSignature = this.config.signer.sign(originData);
-
-      // Create signatures
-      const bodySig = new NeoFsV2Refs.Signature();
-      bodySig.Key = publicKeyBytes(this.config.signer.public());
-      bodySig.Sign = bodySignature;
-      bodySig.Scheme = this.config.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      verifyHeader.BodySignature = bodySig;
-
-      const metaSig = new NeoFsV2Refs.Signature();
-      metaSig.Key = publicKeyBytes(this.config.signer.public());
-      metaSig.Sign = metaSignature;
-      metaSig.Scheme = this.config.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      verifyHeader.MetaSignature = metaSig;
-
-      const originSig = new NeoFsV2Refs.Signature();
-      originSig.Key = publicKeyBytes(this.config.signer.public());
-      originSig.Sign = originSignature;
-      originSig.Scheme = this.config.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      verifyHeader.OriginSignature = originSig;
-
-      request.VerifyHeader = verifyHeader;
+      signRequest(request, this.config.signer);
 
       // Make the gRPC call using our generated service client
       const response = await this.client.networkInfo(request);
@@ -343,44 +274,12 @@ export class NetmapClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 22;
+      version.Minor = 26;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
 
-      // Create proper protobuf verification header
-      const verifyHeader = new NeoFsV2Session.RequestVerificationHeader();
-
-      // Generate proper signatures for the request
-      const bodyData = request.Body!.serializeBinary();
-      const bodySignature = this.config.signer.sign(bodyData);
-
-      const metaData = request.MetaHeader!.serializeBinary();
-      const metaSignature = this.config.signer.sign(metaData);
-
-      const originData = verifyHeader.serializeBinary();
-      const originSignature = this.config.signer.sign(originData);
-
-      // Create signatures
-      const bodySig = new NeoFsV2Refs.Signature();
-      bodySig.Key = publicKeyBytes(this.config.signer.public());
-      bodySig.Sign = bodySignature;
-      bodySig.Scheme = this.config.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      verifyHeader.BodySignature = bodySig;
-
-      const metaSig = new NeoFsV2Refs.Signature();
-      metaSig.Key = publicKeyBytes(this.config.signer.public());
-      metaSig.Sign = metaSignature;
-      metaSig.Scheme = this.config.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      verifyHeader.MetaSignature = metaSig;
-
-      const originSig = new NeoFsV2Refs.Signature();
-      originSig.Key = publicKeyBytes(this.config.signer.public());
-      originSig.Sign = originSignature;
-      originSig.Scheme = this.config.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      verifyHeader.OriginSignature = originSig;
-
-      request.VerifyHeader = verifyHeader;
+      signRequest(request, this.config.signer);
 
       // Make the gRPC call using our generated service client
       const response = await this.client.netmapSnapshot(request);

@@ -6,8 +6,12 @@ import { Signer, publicKeyBytes } from '@axlabs/neofs-sdk-ts-core/crypto';
 import { NeoFsV2Refs } from '../gen/refs/types_pb';
 import { NeoFsV2Session } from '../gen/session/types_pb';
 import { NeoFsV2Object } from '../gen/object/types_pb';
-import { PutRequest, PutRequest_Body, PutResponse, GetRequest, GetRequest_Body, HeadRequest, HeadRequest_Body, DeleteRequest, DeleteRequest_Body, SearchRequest, SearchRequest_Body, SearchV2Request, SearchV2Request_Body, GetResponse, GetResponse_Body, HeadResponse, HeadResponse_Body, DeleteResponse, DeleteResponse_Body, SearchResponse, SearchResponse_Body, SearchV2Response, SearchV2Response_Body, SearchV2Response_OIDWithMeta, PutRequest_Body_Init, GetRangeRequest, GetRangeRequest_Body, GetRangeResponse, Range } from '../gen/object/service_pb';
+import { PutRequest, PutRequest_Body, PutResponse, GetRequest, GetRequest_Body, HeadRequest, HeadRequest_Body, DeleteRequest, DeleteRequest_Body, SearchRequest, SearchRequest_Body, SearchV2Request, SearchV2Request_Body, GetResponse, GetResponse_Body, HeadResponse, HeadResponse_Body, DeleteResponse, DeleteResponse_Body, SearchResponse, SearchResponse_Body, SearchV2Response, SearchV2Response_Body, SearchV2Response_OIDWithMeta, PutRequest_Body_Init, Range } from '../gen/object/service_pb';
 import { ObjectServiceClient } from '../gen/object/service_grpc_pb';
+import {
+  createRequestVerificationHeader as createV26RequestVerificationHeader,
+  signRequest as signV26Request,
+} from './request-signing';
 import * as grpc from '@grpc/grpc-js';
 import * as crypto from 'crypto';
 
@@ -153,75 +157,43 @@ export class ObjectClient {
     return new Uint8Array(crypto.createHash('sha256').update(data).digest());
   }
 
+  private parseObjectHeader(header: any, signature?: any): ObjectHeader {
+    return {
+      containerId: { value: new Uint8Array(header.ContainerId?.Value || []) },
+      ownerId: new Uint8Array(header.OwnerId?.Value || []),
+      objectType: header.ObjectType,
+      payloadLength: header.PayloadLength !== undefined ? Number(header.PayloadLength) : undefined,
+      payloadHash: header.PayloadHash ? {
+        type: header.PayloadHash.Type,
+        sum: new Uint8Array(header.PayloadHash.Sum),
+      } : undefined,
+      homomorphicHash: header.HomomorphicHash ? {
+        type: header.HomomorphicHash.Type,
+        sum: new Uint8Array(header.HomomorphicHash.Sum),
+      } : undefined,
+      attributes: (header.Attributes || []).map((attribute: any) => ({
+        key: attribute.Key,
+        value: attribute.Value,
+      })),
+      signature: signature ? {
+        key: new Uint8Array(signature.Key || []),
+        sign: new Uint8Array(signature.Sign || []),
+        scheme: signature.Scheme,
+      } : undefined,
+      version: header.Version ? {
+        major: header.Version.Major,
+        minor: header.Version.Minor,
+      } : undefined,
+    };
+  }
+
   private getVersion(): Uint8Array {
     return new Uint8Array([0, 2]); // Version 2.0
   }
 
   private signRequest(request: any): void {
     if (!this.signer) return;
-    
-    // Get existing verification header (if any)
-    const existingVerifyHeader = request.VerifyHeader;
-    
-    // Serialize the request body (not the entire request)
-    const bodySerialized = request.Body!.serializeBinary();
-    
-    // Create signature for body
-    const bodySignatureBytes = this.signer.sign(bodySerialized);
-    
-    // Create signature object
-    const bodySignature = new NeoFsV2Refs.Signature();
-    const publicKeyBytes = new Uint8Array(this.signer.public().maxEncodedSize());
-    this.signer.public().encode(publicKeyBytes);
-    bodySignature.Key = publicKeyBytes;
-    bodySignature.Sign = bodySignatureBytes;
-    bodySignature.Scheme = this.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-    
-    // Serialize the meta header
-    const metaSerialized = request.MetaHeader!.serializeBinary();
-    
-    // Create signature for meta header
-    const metaSignatureBytes = this.signer.sign(metaSerialized);
-    
-    const metaSignature = new NeoFsV2Refs.Signature();
-    metaSignature.Key = publicKeyBytes;
-    metaSignature.Sign = metaSignatureBytes;
-    metaSignature.Scheme = this.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-    
-    // Create verification header
-    const verifyHeader = new NeoFsV2Session.RequestVerificationHeader();
-    
-    // Only set body signature if there's no existing verification header
-    if (!existingVerifyHeader) {
-      verifyHeader.BodySignature = bodySignature;
-    }
-    verifyHeader.MetaSignature = metaSignature;
-    
-    // Set origin signature to signature of existing verification header (if any)
-    if (existingVerifyHeader) {
-      const existingVerifyHeaderSerialized = existingVerifyHeader.serializeBinary();
-      const originSignatureBytes = this.signer.sign(existingVerifyHeaderSerialized);
-      
-      const originSignature = new NeoFsV2Refs.Signature();
-      originSignature.Key = publicKeyBytes;
-      originSignature.Sign = originSignatureBytes;
-      originSignature.Scheme = this.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      
-      verifyHeader.OriginSignature = originSignature;
-    } else {
-      // For the first request, sign empty byte array (like C# and Go implementations)
-      const emptySignatureBytes = this.signer.sign(new Uint8Array(0));
-      
-      const originSignature = new NeoFsV2Refs.Signature();
-      originSignature.Key = publicKeyBytes;
-      originSignature.Sign = emptySignatureBytes;
-      originSignature.Scheme = this.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      
-      verifyHeader.OriginSignature = originSignature;
-    }
-    
-    // Set the verification header on the request
-    request.VerifyHeader = verifyHeader;
+    signV26Request(request, this.signer);
   }
 
   /**
@@ -249,7 +221,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 22;
+    version.Minor = 26;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -287,7 +259,7 @@ export class ObjectClient {
           const init = responseBody.Init;
           objectId = { value: new Uint8Array(init.ObjectId?.Value || []) };
           objectSignature = init.Signature;
-          objectHeader = init.Header;
+          objectHeader = init.Header ? this.parseObjectHeader(init.Header, init.Signature) : null;
         }
 
         const rawChunk = responseBody.Chunk;
@@ -328,14 +300,14 @@ export class ObjectClient {
   }
 
   /**
-   * Read a byte range of an object payload (ObjectService/GetRange).
+   * Read a byte range of an object payload through ObjectService/Get.
    */
   async getRange(params: {
     address: Address;
     range: { offset: bigint; length: bigint };
     raw?: boolean;
   }): Promise<Uint8Array> {
-    const body = new GetRangeRequest_Body();
+    const body = new GetRequest_Body();
     const addressProto = new NeoFsV2Refs.Address();
     const containerIdProto = new NeoFsV2Refs.ContainerID();
     containerIdProto.Value = params.address.containerId.value;
@@ -350,17 +322,18 @@ export class ObjectClient {
     rangeProto.Length = params.range.length;
     body.Range = rangeProto;
     body.Raw = params.raw ?? false;
+    body.PayloadOnly = true;
 
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 22;
+    version.Minor = 26;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
     const verifyHeader = this.createVerificationHeader(body.serializeBinary(), metaHeader);
 
-    const request = new GetRangeRequest();
+    const request = new GetRequest();
     request.Body = body;
     request.MetaHeader = metaHeader;
     request.VerifyHeader = verifyHeader;
@@ -368,10 +341,10 @@ export class ObjectClient {
     const expectedLen = params.range.length;
 
     return new Promise((resolve, reject) => {
-      const call = this.client.getRange(request);
+      const call = this.client.get(request);
       const chunks: Uint8Array[] = [];
 
-      call.on('data', (response: GetRangeResponse) => {
+      call.on('data', (response: GetResponse) => {
         const responseBody = response.Body;
         if (!responseBody) return;
         if (responseBody.SplitInfo) {
@@ -399,7 +372,7 @@ export class ObjectClient {
         if (expectedLen > 0n && BigInt(out.length) !== expectedLen) {
           reject(
             new Error(
-              `GetRange size mismatch: expected ${expectedLen} bytes, assembled ${out.length}`,
+              `Get range size mismatch: expected ${expectedLen} bytes, assembled ${out.length}`,
             ),
           );
           return;
@@ -449,14 +422,11 @@ export class ObjectClient {
       payloadHash.Type = params.header.payloadHash.type;
       payloadHash.Sum = params.header.payloadHash.sum;
       headerProto.PayloadHash = payloadHash;
-    }
-
-    // Set homomorphic hash if provided
-    if (params.header.homomorphicHash) {
-      const homomorphicHash = new NeoFsV2Refs.Checksum();
-      homomorphicHash.Type = params.header.homomorphicHash.type;
-      homomorphicHash.Sum = params.header.homomorphicHash.sum;
-      headerProto.HomomorphicHash = homomorphicHash;
+    } else if (params.payload) {
+      const payloadHash = new NeoFsV2Refs.Checksum();
+      payloadHash.Type = NeoFsV2Refs.ChecksumType.ChecksumType_SHA256;
+      payloadHash.Sum = this.sha256(params.payload);
+      headerProto.PayloadHash = payloadHash;
     }
 
     // Set attributes
@@ -503,7 +473,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 22;
+    version.Minor = 26;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -589,40 +559,7 @@ export class ObjectClient {
     bodyBytes: Uint8Array,
     metaHeader: NeoFsV2Session.RequestMetaHeader
   ): NeoFsV2Session.RequestVerificationHeader {
-    const pubKey = publicKeyBytes(this.signer.public());
-    const scheme = this.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-
-    // Sign the body
-    const bodySignature = this.signer.sign(bodyBytes);
-
-    // Sign the serialized meta header
-    const metaBytes = metaHeader.serializeBinary();
-    const metaSignature = this.signer.sign(metaBytes);
-
-    // For origin signature, we sign an empty byte array (no origin header)
-    const originSignature = this.signer.sign(new Uint8Array(0));
-
-    const verifyHeader = new NeoFsV2Session.RequestVerificationHeader();
-    
-    const bodySig = new NeoFsV2Refs.Signature();
-    bodySig.Key = pubKey;
-    bodySig.Sign = bodySignature;
-    bodySig.Scheme = scheme;
-    verifyHeader.BodySignature = bodySig;
-    
-    const metaSig = new NeoFsV2Refs.Signature();
-    metaSig.Key = pubKey;
-    metaSig.Sign = metaSignature;
-    metaSig.Scheme = scheme;
-    verifyHeader.MetaSignature = metaSig;
-    
-    const originSig = new NeoFsV2Refs.Signature();
-    originSig.Key = pubKey;
-    originSig.Sign = originSignature;
-    originSig.Scheme = scheme;
-    verifyHeader.OriginSignature = originSig;
-
-    return verifyHeader;
+    return createV26RequestVerificationHeader(bodyBytes, metaHeader, this.signer);
   }
 
 
@@ -650,7 +587,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 22;
+    version.Minor = 26;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -674,7 +611,7 @@ export class ObjectClient {
     
     if (responseBody.Header) {
       const headerWithSig = responseBody.Header;
-      return headerWithSig.Header!;
+      return this.parseObjectHeader(headerWithSig.Header!, headerWithSig.Signature);
     } else if (responseBody.ShortHeader) {
       const shortHeader = responseBody.ShortHeader;
       // Convert short header to full header format
@@ -726,7 +663,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 22;
+    version.Minor = 26;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -776,7 +713,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 22;
+    version.Minor = 26;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -849,7 +786,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 22;
+    version.Minor = 26;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 

@@ -10,6 +10,7 @@ import { SessionServiceClient } from '../gen/session/service_grpc_pb';
 import { CreateRequest, CreateRequest_Body, CreateResponse, CreateResponse_Body } from '../gen/session/service_pb';
 import { NeoFsV2Session } from '../gen/session/types_pb';
 import { NeoFsV2Refs } from '../gen/refs/types_pb';
+import { signRequest as signV26Request } from './request-signing';
 
 export interface SessionToken {
   id: Uint8Array;
@@ -81,7 +82,7 @@ export class SessionClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 0;
+    version.Minor = 26;
     metaHeader.Version = version;
     metaHeader.Epoch = BigInt(0); // Use current epoch
     metaHeader.Ttl = 2;
@@ -212,70 +213,7 @@ export class SessionClient {
    */
   private signRequest(request: any): void {
     if (!this.signer) return;
-    
-    // Get existing verification header (if any)
-    const existingVerifyHeader = request.VerifyHeader;
-    
-    // Serialize the request body (not the entire request)
-    const bodySerialized = request.Body!.serializeBinary();
-    
-    // Create signature for body
-    const bodySignatureBytes = this.signer.sign(bodySerialized);
-    
-    // Get public key bytes
-    const pubKeyBytes = publicKeyBytes(this.signer.public());
-    
-    // Create signature object
-    const bodySignature = new NeoFsV2Refs.Signature();
-    bodySignature.Key = pubKeyBytes;
-    bodySignature.Sign = bodySignatureBytes;
-    bodySignature.Scheme = this.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-    
-    // Serialize the meta header
-    const metaSerialized = request.MetaHeader!.serializeBinary();
-    
-    // Create signature for meta header
-    const metaSignatureBytes = this.signer.sign(metaSerialized);
-    
-    const metaSignature = new NeoFsV2Refs.Signature();
-    metaSignature.Key = pubKeyBytes;
-    metaSignature.Sign = metaSignatureBytes;
-    metaSignature.Scheme = this.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-    
-    // Create verification header
-    const verifyHeader = new NeoFsV2Session.RequestVerificationHeader();
-    
-    // Only set body signature if there's no existing verification header
-    if (!existingVerifyHeader) {
-      verifyHeader.BodySignature = bodySignature;
-    }
-    verifyHeader.MetaSignature = metaSignature;
-    
-    // Set origin signature - sign empty byte array if no existing verification header
-    if (existingVerifyHeader) {
-      const existingVerifyHeaderSerialized = existingVerifyHeader.serializeBinary();
-      const originSignatureBytes = this.signer.sign(existingVerifyHeaderSerialized);
-      
-      const originSignature = new NeoFsV2Refs.Signature();
-      originSignature.Key = pubKeyBytes;
-      originSignature.Sign = originSignatureBytes;
-      originSignature.Scheme = this.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      
-      verifyHeader.OriginSignature = originSignature;
-    } else {
-      // For the first request, sign empty byte array (like C# and Go implementations)
-      const emptySignatureBytes = this.signer.sign(new Uint8Array(0));
-      
-      const originSignature = new NeoFsV2Refs.Signature();
-      originSignature.Key = pubKeyBytes;
-      originSignature.Sign = emptySignatureBytes;
-      originSignature.Scheme = this.signer.scheme() as unknown as NeoFsV2Refs.SignatureScheme;
-      
-      verifyHeader.OriginSignature = originSignature;
-    }
-    
-    // Set the verification header on the request
-    request.VerifyHeader = verifyHeader;
+    signV26Request(request, this.signer);
   }
 
   /**

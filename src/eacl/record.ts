@@ -20,17 +20,20 @@ export class Record {
   private _operation: Operation;
   private _filters: Filter[];
   private _targets: Target[];
+  private _comment: string;
 
   constructor(
     action: Action,
     operation: Operation,
     targets: Target[],
-    filters: Filter[] = []
+    filters: Filter[] = [],
+    comment = ''
   ) {
     this._action = action;
     this._operation = operation;
     this._targets = targets;
     this._filters = filters;
+    this._comment = comment;
   }
 
   /** Action to take when rule matches */
@@ -51,6 +54,16 @@ export class Record {
   /** Filters to limit which resources this rule affects */
   get filters(): Filter[] {
     return this._filters;
+  }
+
+  /** Optional human-readable rule comment (NeoFS API v2.25+). */
+  get comment(): string {
+    return this._comment;
+  }
+
+  setComment(comment: string): this {
+    this._comment = comment;
+    return this;
   }
 
   // ----------------------
@@ -163,7 +176,8 @@ export class Record {
       this._action,
       this._operation,
       this._targets.map(t => t.clone()),
-      this._filters.map(f => f.clone())
+      this._filters.map(f => f.clone()),
+      this._comment
     );
   }
 }

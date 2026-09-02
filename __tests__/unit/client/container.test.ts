@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ContainerClient } from '../../../src/client/container';
 import { ContainerServiceClient } from '../../../src/gen/container/service_grpc_pb';
 import { createTestSigner } from '../helpers/rfc6979-signer';
+import { Record, Table, Target } from '../../../src/eacl';
 
 vi.mock('@grpc/grpc-js', () => ({
   credentials: {
@@ -20,7 +21,7 @@ vi.mock('../../../src/gen/container/service_grpc_pb', () => ({
 }));
 
 const minimalContainer = {
-  version: { major: 2, minor: 0 },
+  version: { major: 2, minor: 26 },
   ownerId: new Uint8Array(25).fill(11),
   nonce: new Uint8Array([1, 2]),
   basicAcl: 0x1f,
@@ -76,6 +77,22 @@ describe('ContainerClient', () => {
     expect(proto.Initial?.ReplicaLimits).toEqual([2]);
     expect(proto.Initial?.MaxReplicas).toBe(4);
     expect(proto.Initial?.PreferLocal).toBe(true);
+  });
+
+  it('put signs and forwards an initial EACL table', async () => {
+    const put = vi.fn().mockResolvedValue({
+      Body: { ContainerId: { Value: new Uint8Array([1]) } },
+    });
+    const cc = makeClient({ put });
+    const eacl = new Table().addRecord(Record.allowGet([Target.others()]));
+
+    await cc.put({ container: minimalContainer as any, eacl });
+
+    const request = put.mock.calls[0][0];
+    expect(request.Body.Eacl).toBeDefined();
+    expect(request.Body.EaclSignature).toBeDefined();
+    expect(request.VerifyHeader.RequestSignature).toBeDefined();
+    expect(request.VerifyHeader.BodySignature).toBeUndefined();
   });
 
   it('put throws on NeoFS error status', async () => {

@@ -34,7 +34,7 @@ export class Table {
   constructor(containerId?: Uint8Array) {
     this._containerId = containerId;
     this._records = [];
-    this._version = { major: 2, minor: 22 };
+    this._version = { major: 2, minor: 26 };
   }
 
   /** Container ID this EACL applies to */
@@ -107,9 +107,7 @@ export class Table {
       .allow(Operation.HEAD, targets)
       .allow(Operation.PUT, targets)
       .allow(Operation.DELETE, targets)
-      .allow(Operation.SEARCH, targets)
-      .allow(Operation.RANGE, targets)
-      .allow(Operation.RANGE_HASH, targets);
+      .allow(Operation.SEARCH, targets);
   }
 
   /**
@@ -121,21 +119,17 @@ export class Table {
       .deny(Operation.HEAD, targets)
       .deny(Operation.PUT, targets)
       .deny(Operation.DELETE, targets)
-      .deny(Operation.SEARCH, targets)
-      .deny(Operation.RANGE, targets)
-      .deny(Operation.RANGE_HASH, targets);
+      .deny(Operation.SEARCH, targets);
   }
 
   /**
-   * Allow read operations (GET, HEAD, SEARCH, RANGE, RANGE_HASH) for the given targets.
+   * Allow read operations (GET, HEAD, SEARCH) for the given targets.
    */
   allowRead(targets: Target[]): this {
     return this
       .allow(Operation.GET, targets)
       .allow(Operation.HEAD, targets)
-      .allow(Operation.SEARCH, targets)
-      .allow(Operation.RANGE, targets)
-      .allow(Operation.RANGE_HASH, targets);
+      .allow(Operation.SEARCH, targets);
   }
 
   /**
@@ -145,9 +139,7 @@ export class Table {
     return this
       .deny(Operation.GET, targets)
       .deny(Operation.HEAD, targets)
-      .deny(Operation.SEARCH, targets)
-      .deny(Operation.RANGE, targets)
-      .deny(Operation.RANGE_HASH, targets);
+      .deny(Operation.SEARCH, targets);
   }
 
   /**
@@ -198,6 +190,7 @@ export class Table {
         Action: r.action as number as NeoFsV2Acl.Action,
         Targets: targets,
         Filters: filters,
+        Comment: r.comment,
       });
     });
 
@@ -248,7 +241,8 @@ export class Table {
         r.Action as number as Action,
         r.Operation as number as Operation,
         targets,
-        filters
+        filters,
+        r.Comment
       ));
     }
 

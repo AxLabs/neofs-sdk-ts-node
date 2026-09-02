@@ -388,7 +388,7 @@ async function containerOperationsMenu() {
 
         const containerId = await waiter.containerPut({
           container: {
-            version: { major: 2, minor: 18 },
+            version: { major: 2, minor: 26 },
             ownerId: ownerIdFromPublicKey(publicKeyBytes(state.signer!.public())),
             nonce,
             basicAcl: 0x1fbfbfff, // Public read-write
@@ -602,7 +602,7 @@ async function objectOperationsMenu() {
           objectType: 0, // Regular object
           payloadLength: payload.length,
           payloadHash: {
-            type: 1, // SHA256
+            type: 2, // SHA256
             sum: payloadHash,
           },
           attributes: [
@@ -610,7 +610,7 @@ async function objectOperationsMenu() {
             { key: 'ContentType', value: 'text/plain' },
             { key: 'Application', value: 'NeoFS-Node-Example' },
           ],
-          version: { major: 2, minor: 0 },
+          version: { major: 2, minor: 26 },
         };
         
         const objectId = await state.client.object().put({
@@ -782,10 +782,12 @@ async function listObjects() {
   
   try {
     log.info('Searching for objects...');
-    const objectIds = await state.client.object().search({
+    const searchResult = await state.client.object().searchV2({
       containerId: state.selectedContainerId,
       filters: [],
+      limit: 1000,
     });
+    const objectIds = searchResult.result.map(result => result.id);
     
     log.success(`Found ${objectIds.length} objects`);
     state.objectIds = objectIds;
