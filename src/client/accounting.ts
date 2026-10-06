@@ -9,6 +9,7 @@ import { NeoFsV2Refs } from '../gen/refs/types_pb';
 import { NeoFsV2Session } from '../gen/session/types_pb';
 import { NeoFsV2Accounting } from '../gen/accounting/types_pb';
 import { signRequest } from './request-signing';
+import { grpcCallOptions } from './grpc-call';
 import * as grpc from '@grpc/grpc-js';
 
 /**
@@ -248,7 +249,11 @@ export class AccountingClient {
       signRequest(request, this.config.signer);
       
       // Make the gRPC call using our generated service client
-      const response = await this.client.balance(request);
+      const response = await this.client.balance(
+        request,
+        undefined,
+        grpcCallOptions(this.config.timeout),
+      );
 
       // Check if we got a successful response
       if (response.MetaHeader && response.MetaHeader.Status) {

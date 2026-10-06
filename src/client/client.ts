@@ -12,7 +12,10 @@ export interface ClientConfig {
   endpoint: string;
   /** Signer for authentication */
   signer: Signer;
-  /** Request timeout in milliseconds */
+  /**
+   * Request timeout in milliseconds, applied as a gRPC deadline on every RPC.
+   * Defaults to 30000.
+   */
   timeout?: number;
   /** Additional headers */
   headers?: Record<string, string>;
@@ -36,7 +39,11 @@ export class NeoFSClient {
     this.accountingClient = new AccountingClient(this.config);
     this.netmapClient = new NetmapClient(this.config);
     this.containerClient = new ContainerClient(this.config);
-    this.objectClient = new ObjectClient(this, { signer: this.config.signer, endpoint: this.config.endpoint });
+    this.objectClient = new ObjectClient(this, {
+      signer: this.config.signer,
+      endpoint: this.config.endpoint,
+      timeout: this.config.timeout,
+    });
   }
 
   /**
@@ -82,6 +89,10 @@ export class NeoFSClient {
     this.accountingClient = new AccountingClient(this.config);
     this.netmapClient = new NetmapClient(this.config);
     this.containerClient = new ContainerClient(this.config);
-    this.objectClient = new ObjectClient(this, { signer: this.config.signer, endpoint: this.config.endpoint });
+    this.objectClient = new ObjectClient(this, {
+      signer: this.config.signer,
+      endpoint: this.config.endpoint,
+      timeout: this.config.timeout,
+    });
   }
 }

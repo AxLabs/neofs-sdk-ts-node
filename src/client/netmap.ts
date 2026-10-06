@@ -1,5 +1,6 @@
 import { ClientConfig } from './client';
 import { signRequest } from './request-signing';
+import { grpcCallOptions } from './grpc-call';
 
 // Import proto definitions - using our generated classes
 import { NetmapServiceClient } from '../gen/netmap/service_grpc_pb';
@@ -137,7 +138,11 @@ export class NetmapClient {
       signRequest(request, this.config.signer);
 
       // Make the gRPC call using our generated service client
-      const response = await this.client.localNodeInfo(request);
+      const response = await this.client.localNodeInfo(
+        request,
+        undefined,
+        grpcCallOptions(this.config.timeout),
+      );
 
       // Check if we got a successful response
       if (response.MetaHeader && response.MetaHeader.Status) {
@@ -213,7 +218,11 @@ export class NetmapClient {
       signRequest(request, this.config.signer);
 
       // Make the gRPC call using our generated service client
-      const response = await this.client.networkInfo(request);
+      const response = await this.client.networkInfo(
+        request,
+        undefined,
+        grpcCallOptions(this.config.timeout),
+      );
 
       // Check response status
       if (response.MetaHeader && response.MetaHeader.Status) {
@@ -282,7 +291,11 @@ export class NetmapClient {
       signRequest(request, this.config.signer);
 
       // Make the gRPC call using our generated service client
-      const response = await this.client.netmapSnapshot(request);
+      const response = await this.client.netmapSnapshot(
+        request,
+        undefined,
+        grpcCallOptions(this.config.timeout),
+      );
 
       // Check response status
       if (response.MetaHeader && response.MetaHeader.Status) {

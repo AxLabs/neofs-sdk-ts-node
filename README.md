@@ -28,6 +28,7 @@ const signer = ECDSASigner.fromHex(privateKeyHex);
 const client = new NeoFSClient({
   endpoint: 'st1.t5.fs.neo.org:8082',
   signer,
+  timeout: 30_000, // gRPC deadline for every RPC; 30 seconds is the default
 });
 
 // Create a container

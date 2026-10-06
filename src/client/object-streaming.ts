@@ -13,6 +13,7 @@ import {
   signRequest as signV26Request,
 } from './request-signing';
 import * as grpc from '@grpc/grpc-js';
+import { grpcCallOptions } from './grpc-call';
 import * as crypto from 'crypto';
 
 export interface ObjectHeader {
@@ -101,11 +102,13 @@ export class ObjectClient {
   private sessionClient: SessionClient;
   private sessionToken: SessionToken | null = null;
   private neofsClient: NeoFSClient;
+  private timeout?: number;
 
-  constructor(neofsClient: NeoFSClient, config: { signer: any; endpoint: string }) {
+  constructor(neofsClient: NeoFSClient, config: { signer: any; endpoint: string; timeout?: number }) {
     this.neofsClient = neofsClient;
     this.signer = config.signer;
     this.endpoint = config.endpoint;
+    this.timeout = config.timeout;
     this.sessionClient = new SessionClient(neofsClient, config);
     
     // Create gRPC client
@@ -237,7 +240,7 @@ export class ObjectClient {
     // Make the gRPC server streaming call - pass request directly
     return new Promise((resolve, reject) => {
       // Server streaming: pass request to get(), receive stream
-      const call = this.client.get(request);
+      const call = this.client.get(request, undefined, grpcCallOptions(this.timeout));
       
       let objectHeader: any = null;
       let objectSignature: any = null;
@@ -341,7 +344,7 @@ export class ObjectClient {
     const expectedLen = params.range.length;
 
     return new Promise((resolve, reject) => {
-      const call = this.client.get(request);
+      const call = this.client.get(request, undefined, grpcCallOptions(this.timeout));
       const chunks: Uint8Array[] = [];
 
       call.on('data', (response: GetResponse) => {
@@ -488,7 +491,7 @@ export class ObjectClient {
 
     // Use streaming for object upload
     return new Promise((resolve, reject) => {
-      const call = this.client.put(undefined, undefined, (error: any, response: PutResponse) => {
+      const call = this.client.put(undefined, grpcCallOptions(this.timeout), (error: any, response: PutResponse) => {
         if (error) {
           console.error('Put gRPC error:', error);
           reject(error);
@@ -601,7 +604,7 @@ export class ObjectClient {
     request.VerifyHeader = verifyHeader;
 
     // Make the gRPC call
-    const response = await this.client.head(request);
+    const response = await this.client.head(request, undefined, grpcCallOptions(this.timeout));
     
     // Parse response
     const responseBody = response.Body;
@@ -677,7 +680,7 @@ export class ObjectClient {
     request.VerifyHeader = verifyHeader;
 
     // Make the gRPC call
-    const response = await this.client.delete(request);
+    const response = await this.client.delete(request, undefined, grpcCallOptions(this.timeout));
     
     // Parse response - delete returns the address
     return params.address;
@@ -728,7 +731,7 @@ export class ObjectClient {
 
     // Make the gRPC streaming call
     return new Promise((resolve, reject) => {
-      const call = this.client.search(request);
+      const call = this.client.search(request, undefined, grpcCallOptions(this.timeout));
       const results: ObjectID[] = [];
 
       call.on('data', (response: SearchResponse) => {
@@ -800,7 +803,7 @@ export class ObjectClient {
     request.VerifyHeader = verifyHeader;
 
     // Make the gRPC call
-    const response = await this.client.searchV2(request);
+    const response = await this.client.searchV2(request, undefined, grpcCallOptions(this.timeout));
     
     // Parse response
     const responseBody = response.Body;

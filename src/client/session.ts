@@ -11,6 +11,7 @@ import { CreateRequest, CreateRequest_Body, CreateResponse, CreateResponse_Body 
 import { NeoFsV2Session } from '../gen/session/types_pb';
 import { NeoFsV2Refs } from '../gen/refs/types_pb';
 import { signRequest as signV26Request } from './request-signing';
+import { grpcCallOptions } from './grpc-call';
 
 export interface SessionToken {
   id: Uint8Array;
@@ -55,10 +56,12 @@ export class SessionClient {
   private client: SessionServiceClient;
   private signer: Signer;
   private endpoint: string;
+  private timeout?: number;
 
-  constructor(neofsClient: NeoFSClient, config: { signer: Signer; endpoint: string }) {
+  constructor(neofsClient: NeoFSClient, config: { signer: Signer; endpoint: string; timeout?: number }) {
     this.signer = config.signer;
     this.endpoint = config.endpoint;
+    this.timeout = config.timeout;
     
     // Create gRPC client
     const credentials = config.endpoint.startsWith('grpcs://')
@@ -103,7 +106,7 @@ export class SessionClient {
     this.signRequest(request);
 
     // Make the gRPC call
-    const response = await this.client.create(request);
+    const response = await this.client.create(request, undefined, grpcCallOptions(this.timeout));
 
     // Parse response
     const responseBody = response.Body;

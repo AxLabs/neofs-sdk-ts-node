@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ObjectClient } from '../../../src/client/object-streaming';
 import { ObjectServiceClient } from '../../../src/gen/object/service_grpc_pb';
+import { expectDeadline, expectNoDeadline } from '../helpers/deadline';
 
 vi.mock('@grpc/grpc-js', () => ({
   credentials: {
@@ -67,11 +68,12 @@ function createSigner() {
   };
 }
 
-function createClient() {
+function createClient(timeout?: number) {
   const signer = createSigner();
   const client = new ObjectClient({} as any, {
     signer: signer as any,
     endpoint: 'grpc://example.test:8080',
+    ...(timeout !== undefined ? { timeout } : {}),
   });
   const ctor = vi.mocked(ObjectServiceClient as any);
   const grpcClient = ctor.mock.results.at(-1)?.value as any;
@@ -457,5 +459,106 @@ describe('streaming ObjectClient put()', () => {
         },
       }),
     ).rejects.toThrow('NeoFS error: nope (code: 500)');
+  });
+});
+
+const DEADLINE_MS = 4_000;
+
+function putHeader() {
+  return {
+    containerId: { value: new Uint8Array(32).fill(4) },
+    ownerId: new Uint8Array(25).fill(8),
+    attributes: [] as Array<{ key: string; value: string }>,
+    version: { major: 2, minor: 0 },
+  };
+}
+
+async function objectCallOptions(
+  client: ObjectClient,
+  grpcClient: any,
+  method: 'get' | 'getRange' | 'put' | 'head' | 'delete' | 'search' | 'searchV2',
+): Promise<unknown> {
+  if (method === 'get' || method === 'getRange') {
+    const call = new FakeReadableCall();
+    grpcClient.get.mockReturnValue(call);
+    const pending =
+      method === 'get'
+        ? client.get({ address: createAddress() })
+        : client.getRange({
+            address: createAddress(),
+            range: { offset: 0n, length: 1n },
+          });
+    call.emit('error', new Error('stop'));
+    await pending.catch(() => undefined);
+    return grpcClient.get.mock.calls[0][2];
+  }
+  if (method === 'search') {
+    const call = new FakeReadableCall();
+    grpcClient.search.mockReturnValue(call);
+    const pending = client.search({ containerId: { value: new Uint8Array([1]) } });
+    call.emit('end');
+    await pending;
+    return grpcClient.search.mock.calls[0][2];
+  }
+  if (method === 'put') {
+    grpcClient.put.mockImplementation((_meta: unknown, _options: unknown, cb: any) => ({
+      write: vi.fn(),
+      end: () => {
+        queueMicrotask(() => cb(null, { MetaHeader: { Status: { Code: 0 } }, Body: {} }));
+      },
+    }));
+    await client.put({ header: putHeader(), payload: new Uint8Array([1]) });
+    return grpcClient.put.mock.calls[0][1];
+  }
+  if (method === 'head') {
+    grpcClient.head.mockResolvedValue({});
+    await client.head({ address: createAddress() }).catch(() => undefined);
+    return grpcClient.head.mock.calls[0][2];
+  }
+  if (method === 'delete') {
+    grpcClient.delete.mockResolvedValue({});
+    await client.delete({ address: createAddress() });
+    return grpcClient.delete.mock.calls[0][2];
+  }
+  grpcClient.searchV2.mockResolvedValue({});
+  await client.searchV2({ containerId: { value: new Uint8Array([1]) } }).catch(() => undefined);
+  return grpcClient.searchV2.mock.calls[0][2];
+}
+
+describe('streaming ObjectClient gRPC deadlines', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  const methods = ['get', 'getRange', 'put', 'head', 'delete', 'search', 'searchV2'] as const;
+
+  for (const method of methods) {
+    it(`${method}() passes the configured deadline`, async () => {
+      const { client, grpcClient } = createClient(DEADLINE_MS);
+      const options = await objectCallOptions(client, grpcClient, method);
+      expectDeadline(options as { deadline?: number }, DEADLINE_MS);
+    });
+
+    it(`${method}() stays unbounded when timeout is omitted`, async () => {
+      const { client, grpcClient } = createClient();
+      const options = await objectCallOptions(client, grpcClient, method);
+      expectNoDeadline(options as { deadline?: number });
+    });
+  }
+
+  it('put() rejects the underlying gRPC error', async () => {
+    const { client, grpcClient } = createClient(DEADLINE_MS);
+    const grpcError = Object.assign(new Error('4 DEADLINE_EXCEEDED: Deadline exceeded'), { code: 4 });
+    grpcClient.put.mockImplementation((_meta: unknown, options: { deadline?: number }, cb: any) => {
+      expectDeadline(options, DEADLINE_MS);
+      return {
+        write: vi.fn(),
+        end: () => {
+          queueMicrotask(() => cb(grpcError));
+        },
+      };
+    });
+
+    await expect(client.put({ header: putHeader() })).rejects.toBe(grpcError);
   });
 });

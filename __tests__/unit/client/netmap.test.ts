@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NetmapClient, NodeState } from '../../../src/client/netmap';
 import { NetmapServiceClient } from '../../../src/gen/netmap/service_grpc_pb';
+import { expectDeadline, expectNoDeadline } from '../helpers/deadline';
 
 vi.mock('@grpc/grpc-js', () => ({
   credentials: {
@@ -26,7 +27,7 @@ describe('NetmapClient', () => {
     vi.clearAllMocks();
   });
 
-  function makeClient(grpc: any) {
+  function makeClient(grpc: any, timeout?: number) {
     const ctor = vi.mocked(NetmapServiceClient as any);
     ctor.mockImplementation(function (this: any) {
       Object.assign(this, grpc);
@@ -39,6 +40,7 @@ describe('NetmapClient', () => {
     return new NetmapClient({
       endpoint: 'grpc://netmap.test:9090',
       signer: signer as any,
+      ...(timeout !== undefined ? { timeout } : {}),
     });
   }
 
@@ -132,4 +134,47 @@ describe('NetmapClient', () => {
     expect(snap.nodes).toHaveLength(1);
     expect(snap.nodes[0].state).toBe(NodeState.OFFLINE);
   });
+
+  const deadlineCases = [
+    {
+      name: 'localNodeInfo',
+      call: (client: NetmapClient) => client.localNodeInfo(),
+      ok: {
+        Body: {
+          Version: { Major: 2, Minor: 18 },
+          NodeInfo: { PublicKey: new Uint8Array([1]), Addresses: [], Attributes: [], State: 1 },
+        },
+      },
+    },
+    {
+      name: 'networkInfo',
+      call: (client: NetmapClient) => client.networkInfo(),
+      ok: {
+        Body: {
+          NetworkInfo: { CurrentEpoch: 1n, MagicNumber: 1n, MsPerBlock: 1n, NetworkConfig: { Parameters: [] } },
+        },
+      },
+    },
+    {
+      name: 'netmapSnapshot',
+      call: (client: NetmapClient) => client.netmapSnapshot(),
+      ok: { Body: { Netmap: { Epoch: 1n, Nodes: [] } } },
+    },
+  ] as const;
+
+  for (const spec of deadlineCases) {
+    it(`${spec.name}() passes the configured deadline`, async () => {
+      const rpc = vi.fn().mockResolvedValue(spec.ok);
+      const client = makeClient({ [spec.name]: rpc }, 2500);
+      await spec.call(client);
+      expectDeadline(rpc.mock.calls[0][2], 2500);
+    });
+
+    it(`${spec.name}() stays unbounded when timeout is omitted`, async () => {
+      const rpc = vi.fn().mockResolvedValue(spec.ok);
+      const client = makeClient({ [spec.name]: rpc });
+      await spec.call(client);
+      expectNoDeadline(rpc.mock.calls[0][2]);
+    });
+  }
 });

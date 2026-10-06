@@ -72,6 +72,7 @@ describe('NeoFSClient', () => {
     expect((accountingInstances[0].config as any).signer).toBe(signer);
     expect(objectInstances).toHaveLength(1);
     expect((objectInstances[0].config as any).endpoint).toBe('grpc://node:8080');
+    expect((objectInstances[0].config as any).timeout).toBe(30000);
     expect(objectInstances[0].client).toBe(c);
   });
 
@@ -85,5 +86,6 @@ describe('NeoFSClient', () => {
     const lastCall = vi.mocked(AccountingClient).mock.calls.at(-1)![0] as any;
     expect(lastCall.endpoint).toBe('grpc://b');
     expect(lastCall.timeout).toBe(200);
+    expect((objectInstances.at(-1)!.config as any).timeout).toBe(200);
   });
 });

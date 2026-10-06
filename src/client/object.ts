@@ -95,7 +95,7 @@ export interface ObjectGetRangeParams {
 export class ObjectClient {
   private streamingClient: StreamingObjectClient;
 
-  constructor(client: NeoFSClient, config: { signer: Signer; endpoint: string }) {
+  constructor(client: NeoFSClient, config: { signer: Signer; endpoint: string; timeout?: number }) {
     this.streamingClient = new StreamingObjectClient(client, config);
   }
 

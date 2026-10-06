@@ -3,6 +3,7 @@ import { ContainerClient } from '../../../src/client/container';
 import { ContainerServiceClient } from '../../../src/gen/container/service_grpc_pb';
 import { createTestSigner } from '../helpers/rfc6979-signer';
 import { Record, Table, Target } from '../../../src/eacl';
+import { expectDeadline, expectNoDeadline } from '../helpers/deadline';
 
 vi.mock('@grpc/grpc-js', () => ({
   credentials: {
@@ -39,7 +40,7 @@ describe('ContainerClient', () => {
     vi.clearAllMocks();
   });
 
-  function makeClient(grpc: Record<string, any>) {
+  function makeClient(grpc: Record<string, any>, timeout?: number) {
     const ctor = vi.mocked(ContainerServiceClient as any);
     ctor.mockImplementation(function (this: any) {
       Object.assign(this, grpc);
@@ -47,6 +48,7 @@ describe('ContainerClient', () => {
     return new ContainerClient({
       endpoint: 'grpc://container.test:9090',
       signer: createTestSigner() as any,
+      ...(timeout !== undefined ? { timeout } : {}),
     });
   }
 
@@ -175,4 +177,41 @@ describe('ContainerClient', () => {
     ).resolves.toBeUndefined();
     expect(del).toHaveBeenCalled();
   });
+
+  const deadlineCases = [
+    {
+      name: 'put',
+      call: (cc: ContainerClient) => cc.put({ container: minimalContainer as any }),
+    },
+    {
+      name: 'get',
+      call: (cc: ContainerClient) => cc.get({ containerId: { value: new Uint8Array(32) } }),
+    },
+    {
+      name: 'list',
+      call: (cc: ContainerClient) => cc.list({ ownerId: new Uint8Array(25) }),
+    },
+    {
+      name: 'delete',
+      call: (cc: ContainerClient) => cc.delete({ containerId: { value: new Uint8Array(32) } }),
+    },
+  ] as const;
+
+  for (const spec of deadlineCases) {
+    it(`${spec.name}() passes the configured deadline`, async () => {
+      const rpc = vi.fn().mockResolvedValue({});
+      const cc = makeClient({ [spec.name]: rpc }, 2500);
+      await spec.call(cc).catch(() => undefined);
+      expect(rpc).toHaveBeenCalled();
+      expectDeadline(rpc.mock.calls[0][2], 2500);
+    });
+
+    it(`${spec.name}() stays unbounded when timeout is omitted`, async () => {
+      const rpc = vi.fn().mockResolvedValue({});
+      const cc = makeClient({ [spec.name]: rpc });
+      await spec.call(cc).catch(() => undefined);
+      expect(rpc).toHaveBeenCalled();
+      expectNoDeadline(rpc.mock.calls[0][2]);
+    });
+  }
 });

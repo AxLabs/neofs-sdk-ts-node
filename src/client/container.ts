@@ -24,6 +24,7 @@ import { NeoFsV2Refs } from '../gen/refs/types_pb';
 import { NeoFsV2Session } from '../gen/session/types_pb';
 import { NeoFsV2Netmap } from '../gen/netmap/types_pb';
 import { signRequest } from './request-signing';
+import { grpcCallOptions } from './grpc-call';
 import * as grpc from '@grpc/grpc-js';
 
 /**
@@ -471,7 +472,7 @@ export class ContainerClient {
       signRequest(request, this.config.signer);
 
       // Make the gRPC call using our generated service client
-      const response = await this.client.put(request);
+      const response = await this.client.put(request, undefined, grpcCallOptions(this.config.timeout));
 
       // Check response status
       if (response.MetaHeader && response.MetaHeader.Status) {
@@ -527,7 +528,7 @@ export class ContainerClient {
       signRequest(request, this.config.signer);
 
       // Make the gRPC call using our generated service client
-      const response = await this.client.get(request);
+      const response = await this.client.get(request, undefined, grpcCallOptions(this.config.timeout));
 
       // Check response status
       if (response.MetaHeader && response.MetaHeader.Status) {
@@ -660,7 +661,7 @@ export class ContainerClient {
       signRequest(request, this.config.signer);
 
       // Make the gRPC call using our generated service client
-      const response = await this.client.list(request);
+      const response = await this.client.list(request, undefined, grpcCallOptions(this.config.timeout));
 
       // Check response status
       if (response.MetaHeader && response.MetaHeader.Status) {
@@ -729,7 +730,7 @@ export class ContainerClient {
       signRequest(request, this.config.signer);
 
       // Make the gRPC call using our generated service client
-      const response = await this.client.delete(request);
+      const response = await this.client.delete(request, undefined, grpcCallOptions(this.config.timeout));
 
       // Check response status
       if (response.MetaHeader && response.MetaHeader.Status) {

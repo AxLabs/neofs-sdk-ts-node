@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SessionClient } from '../../../src/client/session';
 import { SessionServiceClient } from '../../../src/gen/session/service_grpc_pb';
 import { createTestSigner } from '../helpers/rfc6979-signer';
+import { expectDeadline, expectNoDeadline } from '../helpers/deadline';
 
 vi.mock('@grpc/grpc-js', () => ({
   credentials: {
@@ -21,7 +22,7 @@ describe('SessionClient', () => {
     vi.clearAllMocks();
   });
 
-  function makeClient(createImpl?: ReturnType<typeof vi.fn>) {
+  function makeClient(createImpl?: ReturnType<typeof vi.fn>, timeout?: number) {
     const ctor = vi.mocked(SessionServiceClient as any);
     ctor.mockImplementation(function (this: any) {
       this.create = createImpl ?? vi.fn();
@@ -30,6 +31,7 @@ describe('SessionClient', () => {
     return new SessionClient({} as any, {
       endpoint: 'grpc://session.test:9090',
       signer: signer as any,
+      ...(timeout !== undefined ? { timeout } : {}),
     });
   }
 
@@ -73,5 +75,25 @@ describe('SessionClient', () => {
     expect(prepared.context?.object?.verb).toBe(2);
     expect(prepared.context?.object?.address).toEqual(address);
     expect(prepared.signature?.sign?.length).toBeGreaterThan(0);
+  });
+
+  it('create() passes the configured deadline', async () => {
+    const create = vi.fn().mockResolvedValue({
+      Body: { Id: new Uint8Array([1]), SessionKey: new Uint8Array([2]) },
+      MetaHeader: { Epoch: BigInt(1) },
+    });
+    const sc = makeClient(create, 2500);
+    await sc.create({ expiration: 10 });
+    expectDeadline(create.mock.calls[0][2], 2500);
+  });
+
+  it('create() stays unbounded when timeout is omitted', async () => {
+    const create = vi.fn().mockResolvedValue({
+      Body: { Id: new Uint8Array([1]), SessionKey: new Uint8Array([2]) },
+      MetaHeader: { Epoch: BigInt(1) },
+    });
+    const sc = makeClient(create);
+    await sc.create({ expiration: 10 });
+    expectNoDeadline(create.mock.calls[0][2]);
   });
 });

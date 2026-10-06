@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { Decimal } from '@axlabs/neofs-sdk-ts-core/types';
 import { AccountingClient } from '../../../src/client/accounting';
 import { AccountingServiceClient } from '../../../src/gen/accounting/service_grpc_pb';
+import { expectDeadline, expectNoDeadline } from '../helpers/deadline';
 
 vi.mock('@grpc/grpc-js', () => ({
   credentials: {
@@ -28,6 +29,7 @@ describe('AccountingClient', () => {
   function clientWithGrpc(
     grpcClient: { balance: ReturnType<typeof vi.fn> },
     accountId?: Uint8Array,
+    timeout?: number,
   ) {
     const ctor = vi.mocked(AccountingServiceClient as any);
     ctor.mockImplementation(function (this: any) {
@@ -41,6 +43,7 @@ describe('AccountingClient', () => {
     const ac = new AccountingClient({
       endpoint: 'grpc://acct.test:9090',
       signer: signer as any,
+      ...(timeout !== undefined ? { timeout } : {}),
     });
     return { ac, signer, grpcClient };
   }
@@ -88,5 +91,28 @@ describe('AccountingClient', () => {
     await expect(ac.getBalance({ accountId: new Uint8Array(25) })).rejects.toThrow(
       'Failed to get balance: deadline',
     );
+  });
+
+  it('getBalance passes the configured deadline', async () => {
+    const balance = vi.fn().mockResolvedValue({ Body: {} });
+    const { ac } = clientWithGrpc({ balance }, undefined, 2500);
+    await ac.getBalance({ accountId: new Uint8Array(25) });
+    expectDeadline(balance.mock.calls[0][2], 2500);
+  });
+
+  it('getBalance stays unbounded when timeout is omitted', async () => {
+    const balance = vi.fn().mockResolvedValue({ Body: {} });
+    const { ac } = clientWithGrpc({ balance });
+    await ac.getBalance({ accountId: new Uint8Array(25) });
+    expectNoDeadline(balance.mock.calls[0][2]);
+  });
+
+  it('getBalance still wraps gRPC errors when a deadline is set', async () => {
+    const balance = vi.fn().mockRejectedValue(new Error('4 DEADLINE_EXCEEDED'));
+    const { ac } = clientWithGrpc({ balance }, undefined, 2500);
+    await expect(ac.getBalance({ accountId: new Uint8Array(25) })).rejects.toThrow(
+      'Failed to get balance: 4 DEADLINE_EXCEEDED',
+    );
+    expectDeadline(balance.mock.calls[0][2], 2500);
   });
 });
