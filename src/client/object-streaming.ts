@@ -1,5 +1,6 @@
 import { NeoFSClient } from './client';
 import { ContainerID, ObjectID, Address, ObjectGetResult } from '../types';
+import { BearerToken } from '../bearer/token';
 import { ObjectGetParams } from './object';
 import { SessionClient, SessionToken } from './session';
 import { Signer, publicKeyBytes } from '@axlabs/neofs-sdk-ts-core/crypto';
@@ -48,6 +49,8 @@ export interface ObjectPutParams {
   header: ObjectHeader;
   payload?: Uint8Array;
   copiesNumber?: number;
+  /** Optional NeoFS bearer token. Authorization stays separate from request signing. */
+  bearerToken?: BearerToken;
 }
 
 
@@ -479,6 +482,9 @@ export class ObjectClient {
     version.Minor = 26;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
+    if (params.bearerToken) {
+      metaHeader.BearerToken = params.bearerToken.toProto();
+    }
 
     // Create verification header for init request
     const initVerifyHeader = this.createVerificationHeader(initBody.serializeBinary(), metaHeader);
@@ -537,6 +543,9 @@ export class ObjectClient {
           const chunkMetaHeader = new NeoFsV2Session.RequestMetaHeader();
           chunkMetaHeader.Version = version;
           chunkMetaHeader.Ttl = 2;
+          if (params.bearerToken) {
+            chunkMetaHeader.BearerToken = params.bearerToken.toProto();
+          }
           
           const chunkVerifyHeader = this.createVerificationHeader(chunkBody.serializeBinary(), chunkMetaHeader);
           

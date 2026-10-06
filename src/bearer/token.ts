@@ -47,11 +47,12 @@ export interface TokenLifetime {
  *   })
  *   .sign(mySigner);
  * 
- * // Share the serialized token with your friend
- * const tokenBytes = token.serialize();
- * 
- * // Friend can use it in requests
- * await client.object().get(containerId, objectId, { bearerToken: tokenBytes });
+ * // Upload with the token. The request is still signed by the caller's signer.
+ * await client.object().put({
+ *   header: { containerId, ownerId },
+ *   payload,
+ *   bearerToken: token,
+ * });
  * ```
  */
 export class BearerToken {

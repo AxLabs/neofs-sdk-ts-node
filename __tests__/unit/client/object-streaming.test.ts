@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ObjectClient } from '../../../src/client/object-streaming';
 import { ObjectServiceClient } from '../../../src/gen/object/service_grpc_pb';
 import { expectDeadline, expectNoDeadline } from '../helpers/deadline';
+import { BearerToken } from '../../../src/bearer/token';
 
 vi.mock('@grpc/grpc-js', () => ({
   credentials: {
@@ -77,7 +78,7 @@ function createClient(timeout?: number) {
   });
   const ctor = vi.mocked(ObjectServiceClient as any);
   const grpcClient = ctor.mock.results.at(-1)?.value as any;
-  return { client, grpcClient };
+  return { client, grpcClient, signer };
 }
 
 describe('streaming ObjectClient get()', () => {
@@ -560,5 +561,122 @@ describe('streaming ObjectClient gRPC deadlines', () => {
     });
 
     await expect(client.put({ header: putHeader() })).rejects.toBe(grpcError);
+  });
+});
+
+function uploadToken(): BearerToken {
+  return new BearerToken().setLifetime({ iat: 1n, nbf: 1n, exp: 5n });
+}
+
+function collectPutMessages(grpcClient: { put: ReturnType<typeof vi.fn> }) {
+  const messages: any[] = [];
+  grpcClient.put.mockImplementation((_meta: unknown, _options: unknown, cb: any) => ({
+    write: (msg: any) => messages.push(msg),
+    end: () => {
+      queueMicrotask(() => cb(null, { MetaHeader: { Status: { Code: 0 } }, Body: {} }));
+    },
+  }));
+  return messages;
+}
+
+function signedBytes(signer: { sign: ReturnType<typeof vi.fn> }): string[] {
+  return signer.sign.mock.calls.map((call) => Buffer.from(call[0] as Uint8Array).toString('hex'));
+}
+
+describe('streaming ObjectClient bearer token', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('attaches the token to init and chunk messages before signing', async () => {
+    const { client, grpcClient } = createClient();
+    const messages = collectPutMessages(grpcClient);
+    const token = uploadToken();
+
+    await client.put({
+      header: putHeader(),
+      payload: new Uint8Array([1, 2, 3, 4]),
+      bearerToken: token,
+    });
+
+    expect(messages.length).toBeGreaterThanOrEqual(2);
+    const encoded = token.toProto().serializeBinary();
+    for (const message of messages) {
+      expect(message.MetaHeader.BearerToken.serializeBinary()).toEqual(encoded);
+      expect(message.VerifyHeader).toBeDefined();
+    }
+  });
+
+  it('attaches the token to an init-only upload', async () => {
+    const { client, grpcClient } = createClient();
+    const messages = collectPutMessages(grpcClient);
+    const token = uploadToken();
+
+    await client.put({ header: putHeader(), bearerToken: token });
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].MetaHeader.BearerToken.serializeBinary()).toEqual(
+      token.toProto().serializeBinary(),
+    );
+  });
+
+  it('leaves BearerToken unset when none is provided', async () => {
+    const { client, grpcClient } = createClient();
+    const messages = collectPutMessages(grpcClient);
+
+    await client.put({ header: putHeader(), payload: new Uint8Array([1, 2]) });
+
+    expect(messages.length).toBeGreaterThanOrEqual(2);
+    for (const message of messages) {
+      expect(message.MetaHeader.BearerToken).toBeUndefined();
+    }
+  });
+
+  it('signs different meta-header bytes when a token is attached', async () => {
+    const { client, grpcClient, signer } = createClient();
+    collectPutMessages(grpcClient);
+    const payload = new Uint8Array([1, 2]);
+    const header = putHeader();
+
+    await client.put({ header, payload });
+    const withoutToken = signedBytes(signer);
+
+    signer.sign.mockClear();
+    await client.put({ header, payload, bearerToken: uploadToken() });
+    const withToken = signedBytes(signer);
+
+    expect(withToken[0]).toEqual(withoutToken[0]);
+    expect(withToken.slice(1)).not.toEqual(withoutToken.slice(1));
+  });
+
+  it('still rejects a NeoFS status error when a token is attached', async () => {
+    const { client, grpcClient } = createClient();
+    grpcClient.put.mockImplementation((_meta: unknown, _options: unknown, cb: any) => ({
+      write: vi.fn(),
+      end: () => {
+        queueMicrotask(() =>
+          cb(null, { MetaHeader: { Status: { Code: 2048, Message: 'denied' } }, Body: {} }),
+        );
+      },
+    }));
+
+    await expect(
+      client.put({ header: putHeader(), bearerToken: uploadToken() }),
+    ).rejects.toThrow('NeoFS error: denied (code: 2048)');
+  });
+
+  it('still rejects a gRPC error when a token is attached', async () => {
+    const { client, grpcClient } = createClient();
+    const grpcError = new Error('7 PERMISSION_DENIED');
+    grpcClient.put.mockImplementation((_meta: unknown, _options: unknown, cb: any) => ({
+      write: vi.fn(),
+      end: () => {
+        queueMicrotask(() => cb(grpcError));
+      },
+    }));
+
+    await expect(
+      client.put({ header: putHeader(), bearerToken: uploadToken() }),
+    ).rejects.toBe(grpcError);
   });
 });

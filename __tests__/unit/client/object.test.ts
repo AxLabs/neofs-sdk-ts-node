@@ -37,6 +37,19 @@ describe('ObjectClient delegations', () => {
     expect(streaming.put).toHaveBeenCalledWith(params);
   });
 
+  it('forwards bearerToken on put()', async () => {
+    const { wrapper, streaming } = createWrapperClient();
+    const bearerToken = { toProto: () => ({}) };
+    const params = {
+      header: { containerId: { value: new Uint8Array([1]) }, ownerId: new Uint8Array([2]) },
+      bearerToken,
+    };
+    streaming.put.mockResolvedValue({ value: new Uint8Array([3]) });
+
+    await wrapper.put(params as any);
+    expect(streaming.put).toHaveBeenCalledWith(params);
+  });
+
   it('delegates get()', async () => {
     const { wrapper, streaming } = createWrapperClient();
     const params = { address: { containerId: { value: new Uint8Array([1]) }, objectId: { value: new Uint8Array([2]) } } };

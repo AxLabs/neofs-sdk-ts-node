@@ -255,8 +255,12 @@ const token = new BearerToken()
   })
   .sign(signer);
 
-// Serialize to share
-const tokenBytes = token.serialize();
+// Upload with scoped authorization. The request signer is still required.
+const objectId = await client.object().put({
+  header: { containerId, ownerId },
+  payload,
+  bearerToken: token,
+});
 ```
 
 ### Waiter (Async Confirmation)

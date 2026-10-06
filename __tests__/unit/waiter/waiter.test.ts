@@ -105,6 +105,20 @@ describe('Waiter', () => {
     expect(head.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 
+  it('objectPut forwards bearerToken to object put', async () => {
+    const put = vi.fn().mockResolvedValue({ value: new Uint8Array([9]) });
+    const head = vi.fn().mockResolvedValue({ containerId: cid, ownerId: new Uint8Array(25) });
+    const bearerToken = { toProto: () => ({}) };
+    const params = { header: { containerId: cid, ownerId: new Uint8Array(25) }, payload: new Uint8Array([1]), bearerToken };
+
+    const waiter = new Waiter({ object: () => ({ put, head }) } as any, { pollInterval: 40, timeout: 8000 });
+    const pending = waiter.objectPut(params as any);
+    await vi.runAllTimersAsync();
+    await pending;
+
+    expect(put).toHaveBeenCalledWith(params);
+  });
+
   it('setPollInterval and setTimeout change defaults', () => {
     const neo = { container: () => ({ put: vi.fn(), get: vi.fn() }) } as any;
     const w = new Waiter(neo);

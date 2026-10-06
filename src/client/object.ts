@@ -1,6 +1,7 @@
 import { NeoFSClient } from '../client';
 import { Signer, PublicKey } from '@axlabs/neofs-sdk-ts-core/crypto';
 import { ContainerID, ObjectID, Address, ObjectGetResult } from '../types';
+import { BearerToken } from '../bearer/token';
 import { ObjectClient as StreamingObjectClient } from './object-streaming';
 
 export interface ObjectHeader {
@@ -35,6 +36,8 @@ export interface ObjectPutParams {
   header: ObjectHeader;
   payload?: Uint8Array;
   copiesNumber?: number;
+  /** Optional NeoFS bearer token. Authorization stays separate from request signing. */
+  bearerToken?: BearerToken;
 }
 
 export interface ObjectGetParams {
