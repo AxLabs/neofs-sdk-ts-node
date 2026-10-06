@@ -18,11 +18,12 @@ vi.mock('../../../src/gen/container/service_grpc_pb', () => ({
     this.get = vi.fn();
     this.list = vi.fn();
     this.delete = vi.fn();
+    this.setExtendedACL = vi.fn();
   }),
 }));
 
 const minimalContainer = {
-  version: { major: 2, minor: 26 },
+  version: { major: 2, minor: 27 },
   ownerId: new Uint8Array(25).fill(11),
   nonce: new Uint8Array([1, 2]),
   basicAcl: 0x1f,
@@ -118,6 +119,7 @@ describe('ContainerClient', () => {
             OwnerId: { Value: new Uint8Array([99]) },
             Nonce: new Uint8Array([1]),
             BasicAcl: 7,
+            Revision: 4n,
             Attributes: [{ Key: 'a', Value: 'b' }],
             PlacementPolicy: {
               ContainerBackupFactor: 3,
@@ -142,6 +144,7 @@ describe('ContainerClient', () => {
     expect(c.version).toEqual({ major: 2, minor: 1 });
     expect(c.ownerId).toEqual(new Uint8Array([99]));
     expect(c.basicAcl).toBe(7);
+    expect(c.revision).toBe(4);
     expect(c.attributes).toEqual([{ key: 'a', value: 'b' }]);
     expect(c.placementPolicy.replicas[0]).toEqual({ count: 2, selector: 's' });
     expect(c.placementPolicy.containerBackupFactor).toBe(3);
@@ -196,6 +199,21 @@ describe('ContainerClient', () => {
       call: (cc: ContainerClient) => cc.delete({ containerId: { value: new Uint8Array(32) } }),
     },
   ] as const;
+
+  it('setEACL sends the table and the observed container revision', async () => {
+    const setExtendedACL = vi.fn().mockResolvedValue({ MetaHeader: { Status: { Code: 0 } } });
+    const cc = makeClient({ setExtendedACL });
+    const containerId = new Uint8Array(32).fill(7);
+    await cc.setEACL({
+      eacl: new Table(containerId).denyWrite([Target.others()]),
+      revision: 3,
+    });
+    const request = setExtendedACL.mock.calls[0][0];
+    expect(request.Body.ContainerRevision).toBe(3n);
+    expect(request.Body.Eacl.ContainerId.Value).toEqual(containerId);
+    expect(request.Body.Signature.Sign).toBeInstanceOf(Uint8Array);
+    expectNoDeadline(setExtendedACL.mock.calls[0][2]);
+  });
 
   for (const spec of deadlineCases) {
     it(`${spec.name}() passes the configured deadline`, async () => {

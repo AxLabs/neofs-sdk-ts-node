@@ -17,7 +17,9 @@ import {
   GetRequest_Body,
   GetResponse,
   DeleteRequest,
-  DeleteRequest_Body
+  DeleteRequest_Body,
+  SetExtendedACLRequest,
+  SetExtendedACLRequest_Body,
 } from '../gen/container/service_pb';
 import { NeoFsV2Container } from '../gen/container/types_pb';
 import { NeoFsV2Refs } from '../gen/refs/types_pb';
@@ -99,6 +101,11 @@ export interface Container {
   basicAcl: number;
   attributes: ContainerAttribute[];
   placementPolicy: PlacementPolicy;
+  /**
+   * Times the container has changed since creation (API v2.27+).
+   * Storage nodes set this. Clients must not send it when creating a container.
+   */
+  revision?: number;
 }
 
 /**
@@ -133,6 +140,16 @@ export interface ContainerListParams {
  */
 export interface ContainerDeleteParams {
   containerId: ContainerID;
+}
+
+/**
+ * Parameters for replacing a container's extended ACL.
+ * `revision` is the revision last read from the container. API v2.27 rejects
+ * the update when it does not match the node's copy.
+ */
+export interface ContainerSetEACLParams {
+  eacl: EACLTable;
+  revision: number;
 }
 
 /**
@@ -464,7 +481,7 @@ export class ContainerClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const versionMeta = new NeoFsV2Refs.Version();
       versionMeta.Major = 2;
-      versionMeta.Minor = 26;
+      versionMeta.Minor = 27;
       metaHeader.Version = versionMeta;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -520,7 +537,7 @@ export class ContainerClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 26;
+      version.Minor = 27;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -620,6 +637,7 @@ export class ContainerClient {
         ownerId: new Uint8Array(containerProto.OwnerId?.Value || []),
         nonce: new Uint8Array(containerProto.Nonce),
         basicAcl: containerProto.BasicAcl,
+        revision: Number(containerProto.Revision ?? 0n),
         attributes,
         placementPolicy: policy,
       };
@@ -653,7 +671,7 @@ export class ContainerClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 26;
+      version.Minor = 27;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -722,7 +740,7 @@ export class ContainerClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 26;
+      version.Minor = 27;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -742,5 +760,53 @@ export class ContainerClient {
     } catch (error: any) {
       throw new Error(`Failed to delete container: ${error.message}`);
     }
+  }
+
+  /**
+   * Replace the container's extended ACL.
+   * The table must already carry the container ID.
+   */
+  async setEACL(params: ContainerSetEACLParams): Promise<void> {
+    try {
+      const eacl = params.eacl.toProto();
+      const signature = new NeoFsV2Refs.SignatureRFC6979();
+      signature.Key = publicKeyBytes(this.config.signer.public());
+      signature.Sign = this.config.signer.sign(eacl.serializeBinary());
+
+      const requestBody = new SetExtendedACLRequest_Body();
+      requestBody.Eacl = eacl;
+      requestBody.Signature = signature;
+      requestBody.ContainerRevision = BigInt(params.revision);
+
+      const request = new SetExtendedACLRequest();
+      request.Body = requestBody;
+
+      const metaHeader = new NeoFsV2Session.RequestMetaHeader();
+      const version = new NeoFsV2Refs.Version();
+      version.Major = 2;
+      version.Minor = 27;
+      metaHeader.Version = version;
+      metaHeader.Ttl = 2;
+      request.MetaHeader = metaHeader;
+
+      signRequest(request, this.config.signer);
+
+      const response = await this.client.setExtendedACL(
+        request,
+        undefined,
+        grpcCallOptions(this.config.timeout),
+      );
+
+      if (response.MetaHeader && response.MetaHeader.Status && response.MetaHeader.Status.Code !== 0) {
+        const status = response.MetaHeader.Status;
+        throw new Error(`NeoFS error: ${status.Message} (code: ${status.Code})`);
+      }
+    } catch (error: any) {
+      throw new Error(`Failed to set container eACL: ${error.message}`);
+    }
+  }
+
+  close(): void {
+    this.client.close();
   }
 }

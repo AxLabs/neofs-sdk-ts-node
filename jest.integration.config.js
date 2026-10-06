@@ -5,6 +5,6 @@ module.exports = {
   testMatch: ['**/__integration__/**/*.test.ts'],
   testPathIgnorePatterns: ['/node_modules/', '/dist/'],
   // NeoFS calls can take time on public networks
-  testTimeout: 180000,
+  testTimeout: 360000,
 };
 

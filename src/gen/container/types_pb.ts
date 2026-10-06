@@ -320,6 +320,7 @@ export interface Container {
   BasicAcl: number;
   Attributes: Container_Attribute[];
   PlacementPolicy?: NeoFsV2Netmap.PlacementPolicy;
+  Revision: bigint;
 }
 
 export class ContainerImpl implements Container {
@@ -329,6 +330,7 @@ export class ContainerImpl implements Container {
   BasicAcl!: number;
   Attributes!: Container_Attribute[];
   PlacementPolicy?: NeoFsV2Netmap.PlacementPolicy;
+  Revision!: bigint;
 
   constructor(data?: Partial<Container>) {
     this.Version = data?.Version ?? undefined;
@@ -337,6 +339,7 @@ export class ContainerImpl implements Container {
     this.BasicAcl = data?.BasicAcl ?? 0;
     this.Attributes = data?.Attributes ?? [];
     this.PlacementPolicy = data?.PlacementPolicy ?? undefined;
+    this.Revision = data?.Revision ?? 0n;
   }
 
   serializeBinary(): Uint8Array {
@@ -359,6 +362,9 @@ export class ContainerImpl implements Container {
     }
     if (this.PlacementPolicy) {
       writer.writeMessage(6, this.PlacementPolicy);
+    }
+    if (this.Revision !== 0n) {
+      writer.writeUint64(7, this.Revision);
     }
     return writer.getResultBuffer();
   }
@@ -418,6 +424,15 @@ export class ContainerImpl implements Container {
             reader.skipField(wireType);
           }
           break;
+        case 7: // Revision
+          if (wireType === 0) { // Varint
+            message.Revision = reader.readUint64();
+          } else if (wireType === 1) { // 64-bit
+            message.Revision = reader.readUint64Fixed();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
         default:
           // Skip unknown fields
           reader.skipField(wireType);
@@ -435,7 +450,8 @@ export class ContainerImpl implements Container {
       Nonce: this.Nonce,
       BasicAcl: this.BasicAcl,
       Attributes: this.Attributes,
-      PlacementPolicy: this.PlacementPolicy
+      PlacementPolicy: this.PlacementPolicy,
+      Revision: this.Revision
     };
   }
 

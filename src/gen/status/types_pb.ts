@@ -345,6 +345,7 @@ export enum Container {
   Container_EACL_NOT_FOUND = 1,
   Container_CONTAINER_LOCKED = 2,
   Container_CONTAINER_AWAIT_TIMEOUT = 3,
+  Container_CONTAINER_VERSION_MISMATCH = 4,
 }
 
 export enum Session {

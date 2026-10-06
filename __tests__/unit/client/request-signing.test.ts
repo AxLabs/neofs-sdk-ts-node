@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ECDSASignerRFC6979 } from '@axlabs/neofs-sdk-ts-core/crypto';
 import { BalanceRequest, BalanceRequest_Body } from '../../../src/gen/accounting/service_pb';
+import { NetworkInfoRequest, NetworkInfoRequest_Body } from '../../../src/gen/netmap/service_pb';
 import { NeoFsV2Refs } from '../../../src/gen/refs/types_pb';
 import { NeoFsV2Session } from '../../../src/gen/session/types_pb';
 import { signRequest } from '../../../src/client/request-signing';
@@ -30,5 +31,28 @@ describe('request signing', () => {
     expect(request.VerifyHeader?.OriginSignature).toBeUndefined();
 
     expect(signedData).toEqual(unsignedRequest);
+  });
+
+  it('omits an empty body field from the signature', () => {
+    const signer = ECDSASignerRFC6979.generate();
+    const version = new NeoFsV2Refs.Version({ Major: 2, Minor: 27 });
+    const metaHeader = new NeoFsV2Session.RequestMetaHeader({ Version: version, Ttl: 2 });
+    const request = new NetworkInfoRequest({
+      Body: new NetworkInfoRequest_Body(),
+      MetaHeader: metaHeader,
+    });
+    const wire = request.serializeBinary();
+    const originalSign = signer.sign.bind(signer);
+    let signedData = new Uint8Array();
+    vi.spyOn(signer, 'sign').mockImplementation(data => {
+      signedData = data;
+      return originalSign(data);
+    });
+
+    signRequest(request, signer);
+
+    expect(wire[0]).toBe(0x0a);
+    expect(wire[1]).toBe(0x00);
+    expect(signedData).toEqual(wire.subarray(2));
   });
 });

@@ -331,7 +331,7 @@ app.post('/api/containers/create', async (req, res) => {
 
     const containerId = await waiter.containerPut({
       container: {
-        version: { major: 2, minor: 26 },
+        version: { major: 2, minor: 27 },
         ownerId: ownerIdFromPublicKey(publicKeyBytes(state.signer!.public())),
         nonce: generateNonce(),
         basicAcl: 0x1fbfbfff, // Public read-write
@@ -555,7 +555,7 @@ app.post('/api/objects/put', async (req, res) => {
         { key: 'ContentType', value: 'application/octet-stream' },
         { key: 'Application', value: 'NeoFS-Web-UI' },
       ],
-      version: { major: 2, minor: 26 },
+      version: { major: 2, minor: 27 },
     };
     
     const objectId = await state.client.object().put({

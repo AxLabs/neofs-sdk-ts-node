@@ -85,7 +85,7 @@ export class SessionClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 26;
+    version.Minor = 27;
     metaHeader.Version = version;
     metaHeader.Epoch = BigInt(0); // Use current epoch
     metaHeader.Ttl = 2;
@@ -130,6 +130,10 @@ export class SessionClient {
     };
 
     return sessionToken;
+  }
+
+  close(): void {
+    this.client.close();
   }
 
   /**

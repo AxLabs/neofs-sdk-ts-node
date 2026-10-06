@@ -388,7 +388,7 @@ async function containerOperationsMenu() {
 
         const containerId = await waiter.containerPut({
           container: {
-            version: { major: 2, minor: 26 },
+            version: { major: 2, minor: 27 },
             ownerId: ownerIdFromPublicKey(publicKeyBytes(state.signer!.public())),
             nonce,
             basicAcl: 0x1fbfbfff, // Public read-write
@@ -610,7 +610,7 @@ async function objectOperationsMenu() {
             { key: 'ContentType', value: 'text/plain' },
             { key: 'Application', value: 'NeoFS-Node-Example' },
           ],
-          version: { major: 2, minor: 26 },
+          version: { major: 2, minor: 27 },
         };
         
         const objectId = await state.client.object().put({

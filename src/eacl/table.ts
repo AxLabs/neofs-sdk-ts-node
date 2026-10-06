@@ -34,7 +34,7 @@ export class Table {
   constructor(containerId?: Uint8Array) {
     this._containerId = containerId;
     this._records = [];
-    this._version = { major: 2, minor: 26 };
+    this._version = { major: 2, minor: 27 };
   }
 
   /** Container ID this EACL applies to */

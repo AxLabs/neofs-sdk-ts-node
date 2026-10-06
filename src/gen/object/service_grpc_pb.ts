@@ -3,7 +3,7 @@
 // Target: nodejs
 
 import * as grpc from '@grpc/grpc-js';
-import { DeleteRequest, DeleteResponse, GetRangeHashRequest, GetRangeHashResponse, GetRangeRequest, GetRangeResponse, GetRequest, GetResponse, HeadRequest, HeadResponse, PutRequest, PutResponse, ReplicateRequest, ReplicateResponse, SearchRequest, SearchResponse, SearchV2Request, SearchV2Response } from './service_pb';
+import { DeleteRequest, DeleteResponse, GetRangeHashRequest, GetRangeHashResponse, GetRangeRequest, GetRangeResponse, GetRequest, GetResponse, HeadRequest, HeadResponse, PutRequest, PutResponse, ReplicateRequest, ReplicateResponse, ReplicateV2Request, ReplicateV2Response, SearchRequest, SearchResponse, SearchV2Request, SearchV2Response } from './service_pb';
 
 export class ObjectServiceClient {
   private client: grpc.Client;
@@ -161,6 +161,24 @@ export class ObjectServiceClient {
         }
       );
     });
+  }
+
+  replicateV2(metadata?: grpc.Metadata, options?: grpc.CallOptions, callback?: (error: grpc.ServiceError | null, response?: ReplicateV2Response) => void): grpc.ClientWritableStream<ReplicateV2Request> {
+    // Default to no-op callback if not provided
+    const finalCallback = callback || ((err, response) => {
+      if (err) {
+        console.error('Client stream error:', err);
+      }
+    });
+
+    return this.client.makeClientStreamRequest<ReplicateV2Request, ReplicateV2Response>(
+      '/neo.fs.v2.object.ObjectService/ReplicateV2',
+      (arg) => Buffer.from(arg.serializeBinary()),
+      (buf) => ReplicateV2Response.deserializeBinary(new Uint8Array(buf)),
+      metadata || new grpc.Metadata(),
+      options || {},
+      finalCallback
+    );
   }
 
   close(): void {

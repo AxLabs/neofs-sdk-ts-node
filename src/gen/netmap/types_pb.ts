@@ -1189,15 +1189,18 @@ export enum NodeInfo_State {
 export interface Netmap {
   Epoch: bigint;
   Nodes: NodeInfo[];
+  Version: bigint;
 }
 
 export class NetmapImpl implements Netmap {
   Epoch!: bigint;
   Nodes!: NodeInfo[];
+  Version!: bigint;
 
   constructor(data?: Partial<Netmap>) {
     this.Epoch = data?.Epoch ?? 0n;
     this.Nodes = data?.Nodes ?? [];
+    this.Version = data?.Version ?? 0n;
   }
 
   serializeBinary(): Uint8Array {
@@ -1208,6 +1211,9 @@ export class NetmapImpl implements Netmap {
     }
     for (const item of this.Nodes) {
       writer.writeMessage(2, item);
+    }
+    if (this.Version !== 0n) {
+      writer.writeUint64(3, this.Version);
     }
     return writer.getResultBuffer();
   }
@@ -1239,6 +1245,15 @@ export class NetmapImpl implements Netmap {
             reader.skipField(wireType);
           }
           break;
+        case 3: // Version
+          if (wireType === 0) { // Varint
+            message.Version = reader.readUint64();
+          } else if (wireType === 1) { // 64-bit
+            message.Version = reader.readUint64Fixed();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
         default:
           // Skip unknown fields
           reader.skipField(wireType);
@@ -1252,7 +1267,8 @@ export class NetmapImpl implements Netmap {
   toObject(): NetmapData {
     return {
       Epoch: this.Epoch,
-      Nodes: this.Nodes
+      Nodes: this.Nodes,
+      Version: this.Version
     };
   }
 
@@ -1407,6 +1423,7 @@ export interface NetworkInfo {
   MagicNumber: bigint;
   MsPerBlock: bigint;
   NetworkConfig?: NetworkConfig;
+  NetmapVersion: bigint;
 }
 
 export class NetworkInfoImpl implements NetworkInfo {
@@ -1414,12 +1431,14 @@ export class NetworkInfoImpl implements NetworkInfo {
   MagicNumber!: bigint;
   MsPerBlock!: bigint;
   NetworkConfig?: NetworkConfig;
+  NetmapVersion!: bigint;
 
   constructor(data?: Partial<NetworkInfo>) {
     this.CurrentEpoch = data?.CurrentEpoch ?? 0n;
     this.MagicNumber = data?.MagicNumber ?? 0n;
     this.MsPerBlock = data?.MsPerBlock ?? 0n;
     this.NetworkConfig = data?.NetworkConfig ?? undefined;
+    this.NetmapVersion = data?.NetmapVersion ?? 0n;
   }
 
   serializeBinary(): Uint8Array {
@@ -1436,6 +1455,9 @@ export class NetworkInfoImpl implements NetworkInfo {
     }
     if (this.NetworkConfig) {
       writer.writeMessage(4, this.NetworkConfig);
+    }
+    if (this.NetmapVersion !== 0n) {
+      writer.writeUint64(5, this.NetmapVersion);
     }
     return writer.getResultBuffer();
   }
@@ -1485,6 +1507,15 @@ export class NetworkInfoImpl implements NetworkInfo {
             reader.skipField(wireType);
           }
           break;
+        case 5: // NetmapVersion
+          if (wireType === 0) { // Varint
+            message.NetmapVersion = reader.readUint64();
+          } else if (wireType === 1) { // 64-bit
+            message.NetmapVersion = reader.readUint64Fixed();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
         default:
           // Skip unknown fields
           reader.skipField(wireType);
@@ -1500,7 +1531,8 @@ export class NetworkInfoImpl implements NetworkInfo {
       CurrentEpoch: this.CurrentEpoch,
       MagicNumber: this.MagicNumber,
       MsPerBlock: this.MsPerBlock,
-      NetworkConfig: this.NetworkConfig
+      NetworkConfig: this.NetworkConfig,
+      NetmapVersion: this.NetmapVersion
     };
   }
 

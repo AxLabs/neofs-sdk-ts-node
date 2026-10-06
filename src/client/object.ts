@@ -102,6 +102,10 @@ export class ObjectClient {
     this.streamingClient = new StreamingObjectClient(client, config);
   }
 
+  close(): void {
+    this.streamingClient.close();
+  }
+
   // Delegate all methods to the streaming client
   async put(params: ObjectPutParams): Promise<ObjectID> {
     return this.streamingClient.put(params);

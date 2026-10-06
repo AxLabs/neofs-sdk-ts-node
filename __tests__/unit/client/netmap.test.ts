@@ -98,6 +98,7 @@ describe('NetmapClient', () => {
             NetworkConfig: {
               Parameters: [{ Key: new Uint8Array([1]), Value: new Uint8Array([2]) }],
             },
+            NetmapVersion: 8n,
           },
         },
       }),
@@ -106,6 +107,7 @@ describe('NetmapClient', () => {
     expect(n.currentEpoch).toBe(99);
     expect(n.magicNumber).toBe(123);
     expect(n.msPerBlock).toBe(15);
+    expect(n.netmapVersion).toBe(8);
     expect(n.networkConfig.parameters).toEqual([
       { key: new Uint8Array([1]), value: new Uint8Array([2]) },
     ]);
@@ -117,6 +119,7 @@ describe('NetmapClient', () => {
         Body: {
           Netmap: {
             Epoch: 5n,
+            Version: 3n,
             Nodes: [
               {
                 PublicKey: new Uint8Array([1]),
@@ -131,6 +134,7 @@ describe('NetmapClient', () => {
     });
     const snap = await client.netmapSnapshot();
     expect(snap.epoch).toBe(5);
+    expect(snap.version).toBe(3);
     expect(snap.nodes).toHaveLength(1);
     expect(snap.nodes[0].state).toBe(NodeState.OFFLINE);
   });

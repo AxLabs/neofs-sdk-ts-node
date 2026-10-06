@@ -72,14 +72,19 @@ export interface NetworkInfo {
   magicNumber: number;
   msPerBlock: number;
   networkConfig: NetworkConfig;
+  /** Network map version (API v2.27+). 0 when the node did not report one. */
+  netmapVersion: number;
 }
 
 /**
  * Network map structure
  */
 export interface Netmap {
+  /** @deprecated Network maps are versioned since API v2.27. */
   epoch: number;
   nodes: NodeInfo[];
+  /** Network map version (API v2.27+). 0 when the node did not report one. */
+  version: number;
 }
 
 /**
@@ -130,7 +135,7 @@ export class NetmapClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 26;
+      version.Minor = 27;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -210,7 +215,7 @@ export class NetmapClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 26;
+      version.Minor = 27;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -260,6 +265,7 @@ export class NetmapClient {
         networkConfig: {
           parameters,
         },
+        netmapVersion: Number(networkInfo.NetmapVersion ?? 0n),
       };
     } catch (error: any) {
       throw new Error(`Failed to get network info: ${error.message}`);
@@ -283,7 +289,7 @@ export class NetmapClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 26;
+      version.Minor = 27;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -341,9 +347,14 @@ export class NetmapClient {
       return {
         epoch: Number(netmap.Epoch),
         nodes,
+        version: Number(netmap.Version ?? 0n),
       };
     } catch (error: any) {
       throw new Error(`Failed to get netmap snapshot: ${error.message}`);
     }
+  }
+
+  close(): void {
+    this.client.close();
   }
 }

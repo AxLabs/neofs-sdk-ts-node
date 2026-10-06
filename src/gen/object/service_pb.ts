@@ -962,6 +962,7 @@ export interface PutRequest_Body_Init {
   Signature?: NeoFsV2Refs.Signature;
   Header?: NeoFsV2Object.Header;
   CopiesNumber: number;
+  ContainerRevision: bigint;
 }
 
 export class PutRequest_Body_InitImpl implements PutRequest_Body_Init {
@@ -969,12 +970,14 @@ export class PutRequest_Body_InitImpl implements PutRequest_Body_Init {
   Signature?: NeoFsV2Refs.Signature;
   Header?: NeoFsV2Object.Header;
   CopiesNumber!: number;
+  ContainerRevision!: bigint;
 
   constructor(data?: Partial<PutRequest_Body_Init>) {
     this.ObjectId = data?.ObjectId ?? undefined;
     this.Signature = data?.Signature ?? undefined;
     this.Header = data?.Header ?? undefined;
     this.CopiesNumber = data?.CopiesNumber ?? 0;
+    this.ContainerRevision = data?.ContainerRevision ?? 0n;
   }
 
   serializeBinary(): Uint8Array {
@@ -991,6 +994,9 @@ export class PutRequest_Body_InitImpl implements PutRequest_Body_Init {
     }
     if (this.CopiesNumber !== 0) {
       writer.writeUint32(4, this.CopiesNumber);
+    }
+    if (this.ContainerRevision !== 0n) {
+      writer.writeUint64(5, this.ContainerRevision);
     }
     return writer.getResultBuffer();
   }
@@ -1036,6 +1042,15 @@ export class PutRequest_Body_InitImpl implements PutRequest_Body_Init {
             reader.skipField(wireType);
           }
           break;
+        case 5: // ContainerRevision
+          if (wireType === 0) { // Varint
+            message.ContainerRevision = reader.readUint64();
+          } else if (wireType === 1) { // 64-bit
+            message.ContainerRevision = reader.readUint64Fixed();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
         default:
           // Skip unknown fields
           reader.skipField(wireType);
@@ -1051,7 +1066,8 @@ export class PutRequest_Body_InitImpl implements PutRequest_Body_Init {
       ObjectId: this.ObjectId,
       Signature: this.Signature,
       Header: this.Header,
-      CopiesNumber: this.CopiesNumber
+      CopiesNumber: this.CopiesNumber,
+      ContainerRevision: this.ContainerRevision
     };
   }
 
@@ -1307,13 +1323,16 @@ export type DeleteRequestData = Omit<DeleteRequest, 'serializeBinary' | 'toObjec
 
 export interface DeleteRequest_Body {
   Address?: NeoFsV2Refs.Address;
+  ContainerRevision: bigint;
 }
 
 export class DeleteRequest_BodyImpl implements DeleteRequest_Body {
   Address?: NeoFsV2Refs.Address;
+  ContainerRevision!: bigint;
 
   constructor(data?: Partial<DeleteRequest_Body>) {
     this.Address = data?.Address ?? undefined;
+    this.ContainerRevision = data?.ContainerRevision ?? 0n;
   }
 
   serializeBinary(): Uint8Array {
@@ -1321,6 +1340,9 @@ export class DeleteRequest_BodyImpl implements DeleteRequest_Body {
 
     if (this.Address) {
       writer.writeMessage(1, this.Address);
+    }
+    if (this.ContainerRevision !== 0n) {
+      writer.writeUint64(2, this.ContainerRevision);
     }
     return writer.getResultBuffer();
   }
@@ -1343,6 +1365,15 @@ export class DeleteRequest_BodyImpl implements DeleteRequest_Body {
             reader.skipField(wireType);
           }
           break;
+        case 2: // ContainerRevision
+          if (wireType === 0) { // Varint
+            message.ContainerRevision = reader.readUint64();
+          } else if (wireType === 1) { // 64-bit
+            message.ContainerRevision = reader.readUint64Fixed();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
         default:
           // Skip unknown fields
           reader.skipField(wireType);
@@ -1355,7 +1386,8 @@ export class DeleteRequest_BodyImpl implements DeleteRequest_Body {
 
   toObject(): DeleteRequest_BodyData {
     return {
-      Address: this.Address
+      Address: this.Address,
+      ContainerRevision: this.ContainerRevision
     };
   }
 
@@ -2386,6 +2418,7 @@ export interface SearchV2Request_Body {
   Cursor: string;
   Count: number;
   Attributes: string[];
+  ContainerRevision: bigint;
 }
 
 export class SearchV2Request_BodyImpl implements SearchV2Request_Body {
@@ -2395,6 +2428,7 @@ export class SearchV2Request_BodyImpl implements SearchV2Request_Body {
   Cursor!: string;
   Count!: number;
   Attributes!: string[];
+  ContainerRevision!: bigint;
 
   constructor(data?: Partial<SearchV2Request_Body>) {
     this.ContainerId = data?.ContainerId ?? undefined;
@@ -2403,6 +2437,7 @@ export class SearchV2Request_BodyImpl implements SearchV2Request_Body {
     this.Cursor = data?.Cursor ?? "";
     this.Count = data?.Count ?? 0;
     this.Attributes = data?.Attributes ?? [];
+    this.ContainerRevision = data?.ContainerRevision ?? 0n;
   }
 
   serializeBinary(): Uint8Array {
@@ -2425,6 +2460,9 @@ export class SearchV2Request_BodyImpl implements SearchV2Request_Body {
     }
     for (const item of this.Attributes) {
       writer.writeString(6, item);
+    }
+    if (this.ContainerRevision !== 0n) {
+      writer.writeUint64(7, this.ContainerRevision);
     }
     return writer.getResultBuffer();
   }
@@ -2486,6 +2524,15 @@ export class SearchV2Request_BodyImpl implements SearchV2Request_Body {
             reader.skipField(wireType);
           }
           break;
+        case 7: // ContainerRevision
+          if (wireType === 0) { // Varint
+            message.ContainerRevision = reader.readUint64();
+          } else if (wireType === 1) { // 64-bit
+            message.ContainerRevision = reader.readUint64Fixed();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
         default:
           // Skip unknown fields
           reader.skipField(wireType);
@@ -2503,7 +2550,8 @@ export class SearchV2Request_BodyImpl implements SearchV2Request_Body {
       Filters: this.Filters,
       Cursor: this.Cursor,
       Count: this.Count,
-      Attributes: this.Attributes
+      Attributes: this.Attributes,
+      ContainerRevision: this.ContainerRevision
     };
   }
 
@@ -3788,4 +3836,246 @@ export class ReplicateResponse extends ReplicateResponseImpl {}
 
 // Type for interface data only (excludes class methods from merged type)
 export type ReplicateResponseData = Omit<ReplicateResponse, 'serializeBinary' | 'toObject' | 'constructor'>;
+
+export interface ReplicateV2Request {
+  Init?: ReplicateV2Request_Init;
+  PayloadChunk: Uint8Array;
+}
+
+export class ReplicateV2RequestImpl implements ReplicateV2Request {
+  Init?: ReplicateV2Request_Init;
+  PayloadChunk!: Uint8Array;
+
+  constructor(data?: Partial<ReplicateV2Request>) {
+    this.Init = data?.Init ?? undefined;
+    this.PayloadChunk = data?.PayloadChunk ?? new Uint8Array(0);
+  }
+
+  serializeBinary(): Uint8Array {
+    const writer = new BinaryWriter();
+
+    if (this.Init) {
+      writer.writeMessage(1, this.Init);
+    }
+    if (this.PayloadChunk.length > 0) {
+      writer.writeBytes(2, this.PayloadChunk);
+    }
+    return writer.getResultBuffer();
+  }
+
+  static deserializeBinary(data: Uint8Array): ReplicateV2RequestImpl {
+    const reader = new BinaryReader(data);
+    const message = new ReplicateV2RequestImpl();
+
+    // Parse protobuf wire format
+    while (reader.position < reader.buffer.length) {
+      const tag = reader.readVarint();
+      const fieldNumber = tag >>> 3;
+      const wireType = tag & 7;
+
+      switch (fieldNumber) {
+        case 1: // Init
+          if (wireType === 2) { // Length-delimited
+            message.Init = reader.readMessage(ReplicateV2Request_InitImpl.deserializeBinary);
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        case 2: // PayloadChunk
+          if (wireType === 2) { // Length-delimited
+            message.PayloadChunk = reader.readBytes();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        default:
+          // Skip unknown fields
+          reader.skipField(wireType);
+          break;
+      }
+    }
+
+    return message;
+  }
+
+  toObject(): ReplicateV2RequestData {
+    return {
+      Init: this.Init,
+      PayloadChunk: this.PayloadChunk
+    };
+  }
+
+}
+
+// Export class alias without Impl suffix for Node.js compatibility
+export class ReplicateV2Request extends ReplicateV2RequestImpl {}
+
+// Type for interface data only (excludes class methods from merged type)
+export type ReplicateV2RequestData = Omit<ReplicateV2Request, 'serializeBinary' | 'toObject' | 'constructor'>;
+
+export interface ReplicateV2Request_Init {
+  Object?: NeoFsV2Object.Object;
+  Signature?: NeoFsV2Refs.Signature;
+  SignObject: boolean;
+}
+
+export class ReplicateV2Request_InitImpl implements ReplicateV2Request_Init {
+  Object?: NeoFsV2Object.Object;
+  Signature?: NeoFsV2Refs.Signature;
+  SignObject!: boolean;
+
+  constructor(data?: Partial<ReplicateV2Request_Init>) {
+    this.Object = data?.Object ?? undefined;
+    this.Signature = data?.Signature ?? undefined;
+    this.SignObject = data?.SignObject ?? false;
+  }
+
+  serializeBinary(): Uint8Array {
+    const writer = new BinaryWriter();
+
+    if (this.Object) {
+      writer.writeMessage(1, this.Object);
+    }
+    if (this.Signature) {
+      writer.writeMessage(2, this.Signature);
+    }
+    if (this.SignObject !== false) {
+      writer.writeBool(3, this.SignObject);
+    }
+    return writer.getResultBuffer();
+  }
+
+  static deserializeBinary(data: Uint8Array): ReplicateV2Request_InitImpl {
+    const reader = new BinaryReader(data);
+    const message = new ReplicateV2Request_InitImpl();
+
+    // Parse protobuf wire format
+    while (reader.position < reader.buffer.length) {
+      const tag = reader.readVarint();
+      const fieldNumber = tag >>> 3;
+      const wireType = tag & 7;
+
+      switch (fieldNumber) {
+        case 1: // Object
+          if (wireType === 2) { // Length-delimited
+            message.Object = reader.readMessage(NeoFsV2Object.ObjectImpl.deserializeBinary);
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        case 2: // Signature
+          if (wireType === 2) { // Length-delimited
+            message.Signature = reader.readMessage(NeoFsV2Refs.SignatureImpl.deserializeBinary);
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        case 3: // SignObject
+          if (wireType === 0) { // Varint
+            message.SignObject = reader.readBool();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        default:
+          // Skip unknown fields
+          reader.skipField(wireType);
+          break;
+      }
+    }
+
+    return message;
+  }
+
+  toObject(): ReplicateV2Request_InitData {
+    return {
+      Object: this.Object,
+      Signature: this.Signature,
+      SignObject: this.SignObject
+    };
+  }
+
+}
+
+// Export class alias without Impl suffix for Node.js compatibility
+export class ReplicateV2Request_Init extends ReplicateV2Request_InitImpl {}
+
+// Type for interface data only (excludes class methods from merged type)
+export type ReplicateV2Request_InitData = Omit<ReplicateV2Request_Init, 'serializeBinary' | 'toObject' | 'constructor'>;
+
+export interface ReplicateV2Response {
+  Status?: NeoFsV2Status.Status;
+  ObjectSignature: Uint8Array;
+}
+
+export class ReplicateV2ResponseImpl implements ReplicateV2Response {
+  Status?: NeoFsV2Status.Status;
+  ObjectSignature!: Uint8Array;
+
+  constructor(data?: Partial<ReplicateV2Response>) {
+    this.Status = data?.Status ?? undefined;
+    this.ObjectSignature = data?.ObjectSignature ?? new Uint8Array(0);
+  }
+
+  serializeBinary(): Uint8Array {
+    const writer = new BinaryWriter();
+
+    if (this.Status) {
+      writer.writeMessage(1, this.Status);
+    }
+    if (this.ObjectSignature.length > 0) {
+      writer.writeBytes(2, this.ObjectSignature);
+    }
+    return writer.getResultBuffer();
+  }
+
+  static deserializeBinary(data: Uint8Array): ReplicateV2ResponseImpl {
+    const reader = new BinaryReader(data);
+    const message = new ReplicateV2ResponseImpl();
+
+    // Parse protobuf wire format
+    while (reader.position < reader.buffer.length) {
+      const tag = reader.readVarint();
+      const fieldNumber = tag >>> 3;
+      const wireType = tag & 7;
+
+      switch (fieldNumber) {
+        case 1: // Status
+          if (wireType === 2) { // Length-delimited
+            message.Status = reader.readMessage(NeoFsV2Status.StatusImpl.deserializeBinary);
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        case 2: // ObjectSignature
+          if (wireType === 2) { // Length-delimited
+            message.ObjectSignature = reader.readBytes();
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        default:
+          // Skip unknown fields
+          reader.skipField(wireType);
+          break;
+      }
+    }
+
+    return message;
+  }
+
+  toObject(): ReplicateV2ResponseData {
+    return {
+      Status: this.Status,
+      ObjectSignature: this.ObjectSignature
+    };
+  }
+
+}
+
+// Export class alias without Impl suffix for Node.js compatibility
+export class ReplicateV2Response extends ReplicateV2ResponseImpl {}
+
+// Type for interface data only (excludes class methods from merged type)
+export type ReplicateV2ResponseData = Omit<ReplicateV2Response, 'serializeBinary' | 'toObject' | 'constructor'>;
 

@@ -241,7 +241,7 @@ export class AccountingClient {
       const metaHeader = new NeoFsV2Session.RequestMetaHeader();
       const version = new NeoFsV2Refs.Version();
       version.Major = 2;
-      version.Minor = 26;
+      version.Minor = 27;
       metaHeader.Version = version;
       metaHeader.Ttl = 2;
       request.MetaHeader = metaHeader;
@@ -275,5 +275,9 @@ export class AccountingClient {
     } catch (error: any) {
       throw new Error(`Failed to get balance: ${error.message}`);
     }
+  }
+
+  close(): void {
+    this.client.close();
   }
 }

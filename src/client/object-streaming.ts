@@ -125,6 +125,11 @@ export class ObjectClient {
     );
   }
 
+  close(): void {
+    this.client.close();
+    this.sessionClient.close();
+  }
+
   /**
    * Initialize session token for object operations.
    */
@@ -227,7 +232,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 26;
+    version.Minor = 27;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -333,7 +338,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 26;
+    version.Minor = 27;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -479,7 +484,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 26;
+    version.Minor = 27;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
     if (params.bearerToken) {
@@ -599,7 +604,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 26;
+    version.Minor = 27;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -614,7 +619,12 @@ export class ObjectClient {
 
     // Make the gRPC call
     const response = await this.client.head(request, undefined, grpcCallOptions(this.timeout));
-    
+
+    if (response.MetaHeader?.Status && response.MetaHeader.Status.Code !== 0) {
+      const status = response.MetaHeader.Status;
+      throw new Error(`NeoFS error: ${status.Message} (code: ${status.Code})`);
+    }
+
     // Parse response
     const responseBody = response.Body;
     if (!responseBody) {
@@ -675,7 +685,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 26;
+    version.Minor = 27;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -725,7 +735,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 26;
+    version.Minor = 27;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 
@@ -798,7 +808,7 @@ export class ObjectClient {
     const metaHeader = new NeoFsV2Session.RequestMetaHeader();
     const version = new NeoFsV2Refs.Version();
     version.Major = 2;
-    version.Minor = 26;
+    version.Minor = 27;
     metaHeader.Version = version;
     metaHeader.Ttl = 2;
 

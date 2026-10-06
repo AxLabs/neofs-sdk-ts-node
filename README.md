@@ -355,7 +355,7 @@ npm start
 
 ## Development
 
-The `neofs-api/` directory is a git submodule tracking **[nspcc-dev/neofs-api v2.26.0](https://github.com/nspcc-dev/neofs-api/releases/tag/v2.26.0)** (see the [release notes](https://github.com/nspcc-dev/neofs-api/releases/tag/v2.26.0)). After updating the submodule, regenerate the TypeScript stubs:
+The `neofs-api/` directory is a git submodule tracking **[nspcc-dev/neofs-api v2.27.0](https://github.com/nspcc-dev/neofs-api/releases/tag/v2.27.0)** (see the [release notes](https://github.com/nspcc-dev/neofs-api/releases/tag/v2.27.0)). After updating the submodule, regenerate the TypeScript stubs:
 
 ```bash
 # Build

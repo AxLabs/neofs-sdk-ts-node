@@ -33,11 +33,18 @@ export function createRequestVerificationHeader(
   signer: Signer,
 ): NeoFsV2Session.RequestVerificationHeader {
   const bodyBytes = body instanceof Uint8Array ? body : body.serializeBinary();
-  const encodedBody = encodeMessageField(1, bodyBytes);
   const encodedMeta = encodeMessageField(2, metaHeader.serializeBinary());
-  const signedData = new Uint8Array(encodedBody.length + encodedMeta.length);
-  signedData.set(encodedBody);
-  signedData.set(encodedMeta, encodedBody.length);
+  // Stable protobuf encoding omits a zero-length body field. Empty netmap
+  // requests are signed over the meta header alone.
+  let signedData: Uint8Array;
+  if (bodyBytes.length === 0) {
+    signedData = encodedMeta;
+  } else {
+    const encodedBody = encodeMessageField(1, bodyBytes);
+    signedData = new Uint8Array(encodedBody.length + encodedMeta.length);
+    signedData.set(encodedBody);
+    signedData.set(encodedMeta, encodedBody.length);
+  }
 
   const signature = new NeoFsV2Refs.Signature();
   signature.Key = publicKeyBytes(signer.public());

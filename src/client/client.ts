@@ -81,6 +81,14 @@ export class NeoFSClient {
     return { ...this.config };
   }
 
+  /** Close the underlying gRPC channels. */
+  close(): void {
+    this.accountingClient.close();
+    this.netmapClient.close();
+    this.containerClient.close();
+    this.objectClient.close();
+  }
+
   /**
    * Update the client configuration.
    */

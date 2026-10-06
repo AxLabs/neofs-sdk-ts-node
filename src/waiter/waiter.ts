@@ -102,10 +102,13 @@ function isNotFoundError(error: Error): boolean {
   const message = error.message.toLowerCase();
   // Container not found: code 3072
   // Object not found: code 2049
+  // Object already removed: code 2052
   // gRPC-style: NOT_FOUND / not_found
   return message.includes('code: 3072') ||
          message.includes('code: 2049') ||
+         message.includes('code: 2052') ||
          message.includes('not found') ||
+         message.includes('already removed') ||
          message.includes('not_found');
 }
 
